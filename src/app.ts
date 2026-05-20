@@ -10,17 +10,21 @@ import { notFoundHandler } from './shared/middleware/not-found';
 const app = express();
 
 const allowedOrigins = env.CORS_ORIGIN.split(',').map((o) => o.trim());
+console.log('[CORS] Allowed origins:', allowedOrigins);
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(null, false);
+      if (!origin) {
+        return callback(null, true);
       }
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      console.warn(`[CORS] Blocked origin: ${origin}`);
+      callback(null, false);
     },
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
