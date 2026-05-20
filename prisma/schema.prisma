@@ -1,0 +1,75 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Category {
+  id       String    @id @default(uuid()) @db.Uuid
+  name     String    @unique
+  label    String
+  products Product[]
+
+  @@index([name])
+  @@map("categories")
+}
+
+model Color {
+  id       String           @id @default(uuid()) @db.Uuid
+  name     String           @unique
+  label    String
+  hex      String?
+  variants ProductVariant[]
+
+  @@index([name])
+  @@map("colors")
+}
+
+model Size {
+  id       String           @id @default(uuid()) @db.Uuid
+  name     String           @unique
+  label    String
+  variants ProductVariant[]
+
+  @@index([name])
+  @@map("sizes")
+}
+
+model Product {
+  id          String           @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  categoryId  String           @db.Uuid
+  category    Category         @relation(fields: [categoryId], references: [id])
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  variants    ProductVariant[]
+
+  @@index([name])
+  @@index([categoryId])
+  @@map("products")
+}
+
+model ProductVariant {
+  id        String   @id @default(uuid()) @db.Uuid
+  productId String   @db.Uuid
+  colorId   String   @db.Uuid
+  sizeId    String   @db.Uuid
+  sku       String   @unique
+  stock     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  color     Color    @relation(fields: [colorId], references: [id])
+  size      Size     @relation(fields: [sizeId], references: [id])
+
+  @@index([productId])
+  @@index([colorId])
+  @@index([sizeId])
+  @@index([sku])
+  @@index([stock])
+  @@map("product_variants")
+}

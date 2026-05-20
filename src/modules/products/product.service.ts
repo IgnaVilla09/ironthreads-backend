@@ -1,0 +1,219 @@
+import { AppError } from '../../shared/errors/app-error';
+import { generateSku } from '../../shared/utils/sku-generator';
+import { getPaginationMeta, getPaginationParams } from '../../shared/utils/pagination';
+import { productRepository } from './product.repository';
+import { settingsRepository } from '../settings/settings.repository';
+import {
+  CreateProductInput,
+  UpdateProductInput,
+  CreateVariantInput,
+  UpdateVariantInput,
+  ProductFilters,
+} from './product.types';
+import { logger } from '../../shared/utils/logger';
+
+async function resolveSku(baseSku: string): Promise<string> {
+  let sku = baseSku;
+  let counter = 0;
+  while (await productRepository.findVariantBySku(sku)) {
+    counter++;
+    sku = `${baseSku}-ALTER${counter > 1 ? counter : ''}`;
+  }
+  return sku;
+}
+
+export const productService = {
+  // ── Products ──────────────────────────────────────
+
+  async listProducts(rawQuery: Record<string, unknown>) {
+    const pagination = getPaginationParams(rawQuery as { page?: string; limit?: string });
+
+    const filters: ProductFilters = {
+      categoryId: rawQuery.categoryId as string | undefined,
+      search: rawQuery.search as string | undefined,
+    };
+
+    logger.info('Listing products', { filters, pagination });
+
+    const { products, total } = await productRepository.findAllProducts(
+      filters,
+      pagination
+    );
+    const meta = getPaginationMeta(total, pagination);
+
+    return {
+      products,
+      meta,
+    };
+  },
+
+  async getProductById(id: string) {
+    const product = await productRepository.findProductById(id);
+
+    if (!product) {
+      throw AppError.notFound(`Producto con ID ${id} no encontrado`);
+    }
+
+    return product;
+  },
+
+  async createProduct(input: CreateProductInput) {
+    logger.info('Creating product', { name: input.name });
+
+    const product = await productRepository.createProduct({
+      name: input.name,
+      description: input.description ?? null,
+      category: { connect: { id: input.categoryId } },
+    });
+
+    return product;
+  },
+
+  async updateProduct(id: string, input: UpdateProductInput) {
+    const existing = await productRepository.findProductById(id);
+    if (!existing) {
+      throw AppError.notFound(`Producto con ID ${id} no encontrado`);
+    }
+
+    const updateData: Record<string, unknown> = {};
+    if (input.name !== undefined) updateData.name = input.name;
+    if (input.description !== undefined) updateData.description = input.description;
+    if (input.categoryId !== undefined) updateData.category = { connect: { id: input.categoryId } };
+
+    logger.info('Updating product', { id });
+
+    const product = await productRepository.updateProduct(
+      id,
+      updateData as never
+    );
+    return product;
+  },
+
+  async deleteProduct(id: string) {
+    const existing = await productRepository.findProductById(id);
+    if (!existing) {
+      throw AppError.notFound(`Producto con ID ${id} no encontrado`);
+    }
+
+    logger.info('Deleting product', { id });
+
+    await productRepository.deleteProduct(id);
+  },
+
+  // ── Variants ──────────────────────────────────────
+
+  async listVariants(productId: string) {
+    const product = await productRepository.findProductById(productId);
+    if (!product) {
+      throw AppError.notFound(`Producto con ID ${productId} no encontrado`);
+    }
+
+    return productRepository.findVariants(productId, {});
+  },
+
+  async getVariantById(id: string) {
+    const variant = await productRepository.findVariantById(id);
+    if (!variant) {
+      throw AppError.notFound(`Variante con ID ${id} no encontrada`);
+    }
+    return variant;
+  },
+
+  async createVariant(productId: string, input: CreateVariantInput) {
+    const product = await productRepository.findProductById(productId);
+    if (!product) {
+      throw AppError.notFound(`Producto con ID ${productId} no encontrado`);
+    }
+
+    const [color, size] = await Promise.all([
+      settingsRepository.findColorById(input.colorId),
+      settingsRepository.findSizeById(input.sizeId),
+    ]);
+
+    if (!color) throw AppError.notFound(`Color con ID ${input.colorId} no encontrado`);
+    if (!size) throw AppError.notFound(`Talle con ID ${input.sizeId} no encontrado`);
+
+    // Check if variant with same color+size already exists → add stock
+    const existingVariant = await productRepository.findVariantByProductColorSize(
+      productId,
+      input.colorId,
+      input.sizeId
+    );
+
+    if (existingVariant) {
+      const newStock = existingVariant.stock + input.stock;
+      logger.info('Adding stock to existing variant', {
+        variantId: existingVariant.id,
+        added: input.stock,
+        total: newStock,
+      });
+      return productRepository.updateVariant(existingVariant.id, {
+        stock: newStock,
+      } as never);
+    }
+
+    // Generate unique SKU (append -ALTER if conflict)
+    const baseSku = generateSku(product.name, color.name, size.name);
+    const sku = await resolveSku(baseSku);
+
+    logger.info('Creating variant', { sku, productId });
+
+    const variant = await productRepository.createVariant({
+      sku,
+      stock: input.stock,
+      product: { connect: { id: productId } },
+      color: { connect: { id: input.colorId } },
+      size: { connect: { id: input.sizeId } },
+    });
+
+    return variant;
+  },
+
+  async updateVariant(id: string, input: UpdateVariantInput) {
+    const existing = await productRepository.findVariantById(id);
+    if (!existing) {
+      throw AppError.notFound(`Variante con ID ${id} no encontrada`);
+    }
+
+    const updateData: Record<string, unknown> = {};
+    if (input.colorId !== undefined) updateData.color = { connect: { id: input.colorId } };
+    if (input.sizeId !== undefined) updateData.size = { connect: { id: input.sizeId } };
+    if (input.stock !== undefined) updateData.stock = input.stock;
+
+    const colorId = input.colorId ?? existing.color.id;
+    const sizeId = input.sizeId ?? existing.size.id;
+
+    const [color, size] = await Promise.all([
+      settingsRepository.findColorById(colorId),
+      settingsRepository.findSizeById(sizeId),
+    ]);
+
+    if (!color) throw AppError.notFound(`Color con ID ${colorId} no encontrado`);
+    if (!size) throw AppError.notFound(`Talle con ID ${sizeId} no encontrado`);
+
+    const baseSku = generateSku(existing.product.name, color.name, size.name);
+
+    // If SKU changed, resolve conflicts with -ALTER
+    if (baseSku !== existing.sku) {
+      const sku = await resolveSku(baseSku);
+      updateData.sku = sku;
+    } else {
+      updateData.sku = baseSku;
+    }
+
+    logger.info('Updating variant', { id, sku: updateData.sku });
+
+    return productRepository.updateVariant(id, updateData as never);
+  },
+
+  async deleteVariant(id: string) {
+    const existing = await productRepository.findVariantById(id);
+    if (!existing) {
+      throw AppError.notFound(`Variante con ID ${id} no encontrada`);
+    }
+
+    logger.info('Deleting variant', { id });
+
+    await productRepository.deleteVariant(id);
+  },
+};
