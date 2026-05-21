@@ -43,5 +43,6 @@ export interface GeneralStats {
   totalStock: number;
   categoriesCount: number;
   lowStockCount: number;
+  lowStockSum: number;
   lowStockPercentage: number;
 }

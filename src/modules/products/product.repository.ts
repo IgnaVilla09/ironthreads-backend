@@ -224,7 +224,7 @@ export const productRepository = {
   },
 
   async getStats() {
-    const [totalProducts, totalStock, categoryCount, lowStockVariants, lowStockProducts] =
+    const [totalProducts, totalStock, categoryCount, lowStockVariants, lowStockSum] =
       await Promise.all([
         prisma.product.count(),
         prisma.productVariant.aggregate({ _sum: { stock: true } }),
@@ -233,19 +233,22 @@ export const productRepository = {
           _count: { categoryId: true },
         }),
         prisma.productVariant.count({ where: { stock: { lt: 3 } } }),
-        prisma.product.count({
-          where: {
-            variants: { some: { stock: { lt: 3 } } },
-          },
+        prisma.productVariant.aggregate({
+          where: { stock: { lt: 3 } },
+          _sum: { stock: true },
         }),
       ]);
 
+    const totalStockValue = totalStock._sum.stock ?? 0;
+    const lowStockSumValue = lowStockSum._sum.stock ?? 0;
+
     return {
       totalProducts,
-      totalStock: totalStock._sum.stock ?? 0,
+      totalStock: totalStockValue,
       categoriesCount: categoryCount.length,
       lowStockCount: lowStockVariants,
-      lowStockPercentage: calculatePercentage(lowStockProducts, totalProducts),
+      lowStockSum: lowStockSumValue,
+      lowStockPercentage: calculatePercentage(lowStockSumValue, totalStockValue),
     };
   },
 };
