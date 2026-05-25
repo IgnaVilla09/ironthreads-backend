@@ -7,20 +7,19 @@
     "build": "prisma generate && tsc",
     "start": "node dist/index.js",
     "render:start": "node dist/index.js",
-
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
     "prisma:pull": "prisma db pull",
     "prisma:seed": "tsx --env-file .env prisma/seed.ts",
     "prisma:reset": "prisma db push --force-reset && tsx --env-file .env prisma/seed.ts",
     "prisma:studio": "prisma studio",
-
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "cors": "^2.8.5",
+    "exceljs": "^4.4.0",
     "express": "^4.21.0",
     "zod": "^3.24.0"
   },

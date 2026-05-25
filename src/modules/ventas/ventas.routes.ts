@@ -16,8 +16,9 @@ const verifyStockSchema = z.object({
 });
 
 router.get('/', ventasController.list);
+router.get('/export', ventasController.exportExcel);
+router.post('/verify-stock', validate(verifyStockSchema), ventasController.verifyStock);
 router.get('/:id', ventasController.getById);
 router.post('/', validate(createSaleSchema), ventasController.create);
-router.post('/verify-stock', validate(verifyStockSchema), ventasController.verifyStock);
 
 export default router;

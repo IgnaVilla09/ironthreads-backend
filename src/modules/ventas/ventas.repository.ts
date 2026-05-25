@@ -119,4 +119,47 @@ export const ventasRepository = {
       },
     });
   },
+
+  async findSalesByDateRange(from: Date, to: Date) {
+    const sales = await prisma.sale.findMany({
+      where: {
+        createdAt: {
+          gte: from,
+          lte: to,
+        },
+      },
+      include: {
+        items: {
+          select: {
+            id: true,
+            productName: true,
+            colorName: true,
+            sizeName: true,
+            quantity: true,
+            unitPrice: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const sizeTotals = new Map<string, number>();
+    let totalSold = 0;
+
+    for (const sale of sales) {
+      for (const item of sale.items) {
+        totalSold += item.quantity;
+        sizeTotals.set(
+          item.sizeName,
+          (sizeTotals.get(item.sizeName) ?? 0) + item.quantity
+        );
+      }
+    }
+
+    const sizesSorted = Array.from(sizeTotals.entries())
+      .map(([sizeName, quantity]) => ({ sizeName, quantity }))
+      .sort((a, b) => b.quantity - a.quantity);
+
+    return { sales, sizes: sizesSorted, totalSold };
+  },
 };
