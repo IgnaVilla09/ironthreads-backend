@@ -8,6 +8,7 @@ export const createProductSchema = z.object({
     .transform((v) => v.toUpperCase().trim()),
   description: z.string().max(500).optional(),
   categoryId: z.string().uuid('Categoría inválida'),
+  pointOfSaleId: z.string().uuid('Punto de venta inválido'),
 });
 
 export const updateProductSchema = z.object({
@@ -19,6 +20,7 @@ export const updateProductSchema = z.object({
     .optional(),
   description: z.string().max(500).optional(),
   categoryId: z.string().uuid('Categoría inválida').optional(),
+  pointOfSaleId: z.string().uuid('Punto de venta inválido').optional(),
 });
 
 export const createVariantSchema = z.object({
@@ -37,6 +39,7 @@ export const productQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1).optional(),
   limit: z.coerce.number().int().min(1).max(100).default(20).optional(),
   categoryId: z.string().uuid().optional(),
+  pointOfSaleId: z.string().uuid().optional(),
   search: z.string().optional(),
   minStock: z.coerce.number().int().min(0).optional(),
   maxStock: z.coerce.number().int().min(0).optional(),

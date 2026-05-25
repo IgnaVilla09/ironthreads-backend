@@ -39,6 +39,22 @@ export interface UpdateColorInput {
   hex?: string;
 }
 
+export interface PointOfSaleResponse {
+  id: string;
+  name: string;
+  label: string;
+}
+
+export interface CreatePointOfSaleInput {
+  name: string;
+  label: string;
+}
+
+export interface UpdatePointOfSaleInput {
+  name?: string;
+  label?: string;
+}
+
 export interface CreateSizeInput {
   name: string;
   label: string;

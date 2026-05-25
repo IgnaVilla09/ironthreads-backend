@@ -64,6 +64,34 @@ export const updateColorSchema = z.object({
     .optional(),
 });
 
+export const createPointOfSaleSchema = z.object({
+  name: z
+    .string()
+    .min(1, 'El nombre es requerido')
+    .max(30)
+    .transform((v) => v.toUpperCase().trim()),
+  label: z
+    .string()
+    .min(1, 'La etiqueta es requerida')
+    .max(30)
+    .transform((v) => v.trim()),
+});
+
+export const updatePointOfSaleSchema = z.object({
+  name: z
+    .string()
+    .min(1)
+    .max(30)
+    .transform((v) => v.toUpperCase().trim())
+    .optional(),
+  label: z
+    .string()
+    .min(1)
+    .max(30)
+    .transform((v) => v.trim())
+    .optional(),
+});
+
 export const createSizeSchema = z.object({
   name: z
     .string()

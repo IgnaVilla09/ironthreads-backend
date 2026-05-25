@@ -103,6 +103,56 @@ export const settingsController = {
     }
   },
 
+  // ── Points of Sale ──────────────────────────────
+
+  async listPointsOfSale(_req: Request, res: Response, next: NextFunction) {
+    try {
+      const points = await settingsService.listPointsOfSale();
+      sendSuccess(res, points);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async getPointOfSaleById(req: Request, res: Response, next: NextFunction) {
+    try {
+      const point = await settingsService.getPointOfSaleById(req.params.id as string);
+      sendSuccess(res, point);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async createPointOfSale(req: Request, res: Response, next: NextFunction) {
+    try {
+      const point = await settingsService.createPointOfSale(req.body);
+      sendSuccess(res, point, 201);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async updatePointOfSale(req: Request, res: Response, next: NextFunction) {
+    try {
+      const point = await settingsService.updatePointOfSale(
+        req.params.id as string,
+        req.body
+      );
+      sendSuccess(res, point);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async deletePointOfSale(req: Request, res: Response, next: NextFunction) {
+    try {
+      await settingsService.deletePointOfSale(req.params.id as string);
+      res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
+  },
+
   // ── Sizes ───────────────────────────────────────
 
   async listSizes(_req: Request, res: Response, next: NextFunction) {

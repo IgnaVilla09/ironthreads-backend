@@ -8,6 +8,8 @@ import {
   updateColorSchema,
   createSizeSchema,
   updateSizeSchema,
+  createPointOfSaleSchema,
+  updatePointOfSaleSchema,
 } from './settings.validators';
 
 const router = Router();
@@ -25,6 +27,13 @@ router.get('/colors/:id', settingsController.getColorById);
 router.post('/colors', validate(createColorSchema), settingsController.createColor);
 router.put('/colors/:id', validate(updateColorSchema), settingsController.updateColor);
 router.delete('/colors/:id', settingsController.deleteColor);
+
+// ── Points of Sale ───────────────────────────────────
+router.get('/points-of-sale', settingsController.listPointsOfSale);
+router.get('/points-of-sale/:id', settingsController.getPointOfSaleById);
+router.post('/points-of-sale', validate(createPointOfSaleSchema), settingsController.createPointOfSale);
+router.put('/points-of-sale/:id', validate(updatePointOfSaleSchema), settingsController.updatePointOfSale);
+router.delete('/points-of-sale/:id', settingsController.deletePointOfSale);
 
 // ── Sizes ─────────────────────────────────────────────
 router.get('/sizes', settingsController.listSizes);

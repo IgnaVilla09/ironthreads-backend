@@ -13,6 +13,10 @@ export const analyticsService = {
     return analyticsRepository.findLowStock(threshold ?? 3);
   },
 
+  async getBestSellingSizes(limit?: number) {
+    return analyticsRepository.bestSellingSizes(limit ?? 10);
+  },
+
   async getGeneralStats() {
     return analyticsRepository.getGeneralStats();
   },

@@ -330,6 +330,7 @@ async function main() {
   console.log('🧹 Cleaning existing data...');
   await prisma.productVariant.deleteMany();
   await prisma.product.deleteMany();
+  await prisma.pointOfSale.deleteMany();
   await prisma.category.deleteMany();
   await prisma.color.deleteMany();
   await prisma.size.deleteMany();
@@ -337,6 +338,11 @@ async function main() {
 
   // ── 2. Seed reference tables ──────────────────────
   console.log('📁 Seeding reference data...');
+
+  const pointOfSale = await prisma.pointOfSale.create({
+    data: { name: 'DEPARTAMENTO', label: 'Departamento' },
+  });
+  console.log('   ✓ 1 point of sale');
 
   const categoryMap = new Map<string, string>();
   for (const cat of categories) {
@@ -375,6 +381,7 @@ async function main() {
         name: productData.name,
         description: productData.description,
         categoryId,
+        pointOfSaleId: pointOfSale.id,
         variants: {
           create: productData.variants.map((v) => {
             const colorId = colorMap.get(v.colorName);

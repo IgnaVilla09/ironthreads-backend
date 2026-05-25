@@ -11,6 +11,10 @@ function buildProductWhereClause(filters: ProductFilters): Prisma.ProductWhereIn
     where.categoryId = filters.categoryId;
   }
 
+  if (filters.pointOfSaleId) {
+    where.pointOfSaleId = filters.pointOfSaleId;
+  }
+
   if (filters.search) {
     where.name = { contains: filters.search, mode: 'insensitive' };
   }
@@ -49,6 +53,7 @@ function buildVariantWhereClause(
 
 const productInclude = {
   category: { select: { id: true, name: true, label: true } },
+  pointOfSale: { select: { id: true, name: true, label: true } },
   variants: {
     include: {
       color: { select: { id: true, name: true, label: true, hex: true } },
@@ -221,6 +226,22 @@ export const productRepository = {
       include: variantInclude,
       orderBy: { stock: 'asc' },
     });
+  },
+
+  async findBestSellingSizes(limit: number = 10) {
+    const result = await prisma.saleItem.groupBy({
+      by: ['sizeName'],
+      _sum: { quantity: true },
+      _count: { sizeName: true },
+      orderBy: { _sum: { quantity: 'desc' } },
+      take: limit,
+    });
+
+    return result.map((r) => ({
+      sizeName: r.sizeName,
+      totalSold: r._sum.quantity ?? 0,
+      saleCount: r._count.sizeName,
+    }));
   },
 
   async getStats() {

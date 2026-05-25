@@ -38,6 +38,12 @@ export interface LowStockVariant {
   };
 }
 
+export interface BestSellingSize {
+  sizeName: string;
+  totalSold: number;
+  saleCount: number;
+}
+
 export interface GeneralStats {
   totalProducts: number;
   totalStock: number;

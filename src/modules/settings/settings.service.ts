@@ -7,6 +7,8 @@ import {
   UpdateColorInput,
   CreateSizeInput,
   UpdateSizeInput,
+  CreatePointOfSaleInput,
+  UpdatePointOfSaleInput,
 } from './settings.types';
 import { logger } from '../../shared/utils/logger';
 
@@ -20,6 +22,10 @@ function toColorResponse(col: { id: string; name: string; label: string; hex: st
 
 function toSizeResponse(sz: { id: string; name: string; label: string }) {
   return { id: sz.id, name: sz.name, label: sz.label };
+}
+
+function toPointOfSaleResponse(pos: { id: string; name: string; label: string }) {
+  return { id: pos.id, name: pos.name, label: pos.label };
 }
 
 export const settingsService = {
@@ -117,6 +123,54 @@ export const settingsService = {
 
     logger.info('Deleting color', { id });
     await settingsRepository.deleteColor(id);
+  },
+
+  // ── Points of Sale ──────────────────────────────
+
+  async listPointsOfSale() {
+    const points = await settingsRepository.findAllPointsOfSale();
+    return points.map(toPointOfSaleResponse);
+  },
+
+  async getPointOfSaleById(id: string) {
+    const point = await settingsRepository.findPointOfSaleById(id);
+    if (!point) throw AppError.notFound(`Punto de venta con ID ${id} no encontrado`);
+    return toPointOfSaleResponse(point);
+  },
+
+  async createPointOfSale(input: CreatePointOfSaleInput) {
+    const existing = await settingsRepository.findPointOfSaleByName(input.name);
+    if (existing) {
+      throw AppError.conflict(`Ya existe un punto de venta con el nombre "${input.name}"`);
+    }
+
+    logger.info('Creating point of sale', { name: input.name });
+    const point = await settingsRepository.createPointOfSale(input);
+    return toPointOfSaleResponse(point);
+  },
+
+  async updatePointOfSale(id: string, input: UpdatePointOfSaleInput) {
+    const existing = await settingsRepository.findPointOfSaleById(id);
+    if (!existing) throw AppError.notFound(`Punto de venta con ID ${id} no encontrado`);
+
+    if (input.name && input.name !== existing.name) {
+      const nameExists = await settingsRepository.findPointOfSaleByName(input.name);
+      if (nameExists) {
+        throw AppError.conflict(`Ya existe un punto de venta con el nombre "${input.name}"`);
+      }
+    }
+
+    logger.info('Updating point of sale', { id });
+    const point = await settingsRepository.updatePointOfSale(id, input);
+    return toPointOfSaleResponse(point);
+  },
+
+  async deletePointOfSale(id: string) {
+    const existing = await settingsRepository.findPointOfSaleById(id);
+    if (!existing) throw AppError.notFound(`Punto de venta con ID ${id} no encontrado`);
+
+    logger.info('Deleting point of sale', { id });
+    await settingsRepository.deletePointOfSale(id);
   },
 
   // ── Sizes ───────────────────────────────────────

@@ -38,18 +38,31 @@ model Size {
   @@map("sizes")
 }
 
+model PointOfSale {
+  id       String    @id @default(uuid()) @db.Uuid
+  name     String    @unique
+  label    String
+  products Product[]
+
+  @@index([name])
+  @@map("points_of_sale")
+}
+
 model Product {
-  id          String           @id @default(uuid()) @db.Uuid
-  name        String
-  description String?
-  categoryId  String           @db.Uuid
-  category    Category         @relation(fields: [categoryId], references: [id])
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  variants    ProductVariant[]
+  id             String           @id @default(uuid()) @db.Uuid
+  name           String
+  description    String?
+  categoryId     String           @db.Uuid
+  category       Category         @relation(fields: [categoryId], references: [id])
+  pointOfSaleId  String           @db.Uuid
+  pointOfSale    PointOfSale      @relation(fields: [pointOfSaleId], references: [id])
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  variants       ProductVariant[]
 
   @@index([name])
   @@index([categoryId])
+  @@index([pointOfSaleId])
   @@map("products")
 }
 

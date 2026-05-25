@@ -35,6 +35,20 @@ export const analyticsController = {
     }
   },
 
+  async getBestSellingSizes(req: Request, res: Response, next: NextFunction) {
+    try {
+      const limit = req.query.limit
+        ? parseInt(req.query.limit as string, 10)
+        : undefined;
+      const data = await analyticsService.getBestSellingSizes(
+        limit && !isNaN(limit) ? limit : undefined
+      );
+      sendSuccess(res, data);
+    } catch (error) {
+      next(error);
+    }
+  },
+
   async getGeneralStats(_req: Request, res: Response, next: NextFunction) {
     try {
       const data = await analyticsService.getGeneralStats();

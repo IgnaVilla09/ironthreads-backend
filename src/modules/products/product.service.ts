@@ -30,6 +30,7 @@ export const productService = {
 
     const filters: ProductFilters = {
       categoryId: rawQuery.categoryId as string | undefined,
+      pointOfSaleId: rawQuery.pointOfSaleId as string | undefined,
       search: rawQuery.search as string | undefined,
     };
 
@@ -58,12 +59,18 @@ export const productService = {
   },
 
   async createProduct(input: CreateProductInput) {
+    const pointOfSale = await settingsRepository.findPointOfSaleById(input.pointOfSaleId);
+    if (!pointOfSale) {
+      throw AppError.notFound(`Punto de venta con ID ${input.pointOfSaleId} no encontrado`);
+    }
+
     logger.info('Creating product', { name: input.name });
 
     const product = await productRepository.createProduct({
       name: input.name,
       description: input.description ?? null,
       category: { connect: { id: input.categoryId } },
+      pointOfSale: { connect: { id: input.pointOfSaleId } },
     });
 
     return product;
@@ -79,6 +86,7 @@ export const productService = {
     if (input.name !== undefined) updateData.name = input.name;
     if (input.description !== undefined) updateData.description = input.description;
     if (input.categoryId !== undefined) updateData.category = { connect: { id: input.categoryId } };
+    if (input.pointOfSaleId !== undefined) updateData.pointOfSale = { connect: { id: input.pointOfSaleId } };
 
     logger.info('Updating product', { id });
 

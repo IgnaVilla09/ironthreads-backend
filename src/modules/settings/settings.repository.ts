@@ -54,6 +54,32 @@ export const settingsRepository = {
     return prisma.color.delete({ where: { id } });
   },
 
+  // ── Points of Sale ──────────────────────────────
+
+  async findAllPointsOfSale() {
+    return prisma.pointOfSale.findMany({ orderBy: { name: 'asc' } });
+  },
+
+  async findPointOfSaleById(id: string) {
+    return prisma.pointOfSale.findUnique({ where: { id } });
+  },
+
+  async findPointOfSaleByName(name: string) {
+    return prisma.pointOfSale.findUnique({ where: { name } });
+  },
+
+  async createPointOfSale(data: Prisma.PointOfSaleCreateInput) {
+    return prisma.pointOfSale.create({ data });
+  },
+
+  async updatePointOfSale(id: string, data: Prisma.PointOfSaleUpdateInput) {
+    return prisma.pointOfSale.update({ where: { id }, data });
+  },
+
+  async deletePointOfSale(id: string) {
+    return prisma.pointOfSale.delete({ where: { id } });
+  },
+
   // ── Sizes ───────────────────────────────────────
 
   async findAllSizes() {
