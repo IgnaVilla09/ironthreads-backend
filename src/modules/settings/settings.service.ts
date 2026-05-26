@@ -9,6 +9,8 @@ import {
   UpdateSizeInput,
   CreatePointOfSaleInput,
   UpdatePointOfSaleInput,
+  CreateDepositoInput,
+  UpdateDepositoInput,
 } from './settings.types';
 import { logger } from '../../shared/utils/logger';
 
@@ -26,6 +28,10 @@ function toSizeResponse(sz: { id: string; name: string; label: string }) {
 
 function toPointOfSaleResponse(pos: { id: string; name: string; label: string }) {
   return { id: pos.id, name: pos.name, label: pos.label };
+}
+
+function toDepositoResponse(dep: { id: string; name: string; label: string; pointOfSaleId: string }) {
+  return { id: dep.id, name: dep.name, label: dep.label, pointOfSaleId: dep.pointOfSaleId };
 }
 
 export const settingsService = {
@@ -171,6 +177,64 @@ export const settingsService = {
 
     logger.info('Deleting point of sale', { id });
     await settingsRepository.deletePointOfSale(id);
+  },
+
+  // ── Depositos ────────────────────────────────────
+
+  async listDepositosByPointOfSale(pointOfSaleId: string) {
+    const pos = await settingsRepository.findPointOfSaleById(pointOfSaleId);
+    if (!pos) throw AppError.notFound(`Punto de venta con ID ${pointOfSaleId} no encontrado`);
+
+    const depositos = await settingsRepository.findAllDepositosByPointOfSale(pointOfSaleId);
+    return depositos.map(toDepositoResponse);
+  },
+
+  async getDepositoById(id: string) {
+    const deposito = await settingsRepository.findDepositoById(id);
+    if (!deposito) throw AppError.notFound(`Depósito con ID ${id} no encontrado`);
+    return toDepositoResponse(deposito);
+  },
+
+  async createDeposito(pointOfSaleId: string, input: CreateDepositoInput) {
+    const pos = await settingsRepository.findPointOfSaleById(pointOfSaleId);
+    if (!pos) throw AppError.notFound(`Punto de venta con ID ${pointOfSaleId} no encontrado`);
+
+    const existing = await settingsRepository.findDepositoByNameAndPointOfSale(input.name, pointOfSaleId);
+    if (existing) {
+      throw AppError.conflict(`Ya existe un depósito con el nombre "${input.name}" en este punto de venta`);
+    }
+
+    logger.info('Creating deposito', { name: input.name, pointOfSaleId });
+    const deposito = await settingsRepository.createDeposito({
+      name: input.name,
+      label: input.label,
+      pointOfSale: { connect: { id: pointOfSaleId } },
+    });
+    return toDepositoResponse(deposito);
+  },
+
+  async updateDeposito(id: string, input: UpdateDepositoInput) {
+    const existing = await settingsRepository.findDepositoById(id);
+    if (!existing) throw AppError.notFound(`Depósito con ID ${id} no encontrado`);
+
+    if (input.name && input.name !== existing.name) {
+      const nameExists = await settingsRepository.findDepositoByNameAndPointOfSale(input.name, existing.pointOfSaleId);
+      if (nameExists) {
+        throw AppError.conflict(`Ya existe un depósito con el nombre "${input.name}" en este punto de venta`);
+      }
+    }
+
+    logger.info('Updating deposito', { id });
+    const deposito = await settingsRepository.updateDeposito(id, input);
+    return toDepositoResponse(deposito);
+  },
+
+  async deleteDeposito(id: string) {
+    const existing = await settingsRepository.findDepositoById(id);
+    if (!existing) throw AppError.notFound(`Depósito con ID ${id} no encontrado`);
+
+    logger.info('Deleting deposito', { id });
+    await settingsRepository.deleteDeposito(id);
   },
 
   // ── Sizes ───────────────────────────────────────

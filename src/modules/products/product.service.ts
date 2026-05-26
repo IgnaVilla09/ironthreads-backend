@@ -31,6 +31,7 @@ export const productService = {
     const filters: ProductFilters = {
       categoryId: rawQuery.categoryId as string | undefined,
       pointOfSaleId: rawQuery.pointOfSaleId as string | undefined,
+      depositoId: rawQuery.depositoId as string | undefined,
       search: rawQuery.search as string | undefined,
     };
 
@@ -71,6 +72,7 @@ export const productService = {
       description: input.description ?? null,
       category: { connect: { id: input.categoryId } },
       pointOfSale: { connect: { id: input.pointOfSaleId } },
+      ...(input.depositoId ? { deposito: { connect: { id: input.depositoId } } } : {}),
     });
 
     return product;
@@ -87,6 +89,9 @@ export const productService = {
     if (input.description !== undefined) updateData.description = input.description;
     if (input.categoryId !== undefined) updateData.category = { connect: { id: input.categoryId } };
     if (input.pointOfSaleId !== undefined) updateData.pointOfSale = { connect: { id: input.pointOfSaleId } };
+    if (input.depositoId !== undefined) {
+      updateData.deposito = input.depositoId ? { connect: { id: input.depositoId } } : { disconnect: true };
+    }
 
     logger.info('Updating product', { id });
 

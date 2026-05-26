@@ -39,13 +39,28 @@ model Size {
 }
 
 model PointOfSale {
-  id       String    @id @default(uuid()) @db.Uuid
-  name     String    @unique
-  label    String
-  products Product[]
+  id        String     @id @default(uuid()) @db.Uuid
+  name      String     @unique
+  label     String
+  depositos Deposito[]
+  products  Product[]
 
   @@index([name])
   @@map("points_of_sale")
+}
+
+model Deposito {
+  id             String      @id @default(uuid()) @db.Uuid
+  name           String
+  label          String
+  pointOfSaleId  String      @db.Uuid
+  pointOfSale    PointOfSale @relation(fields: [pointOfSaleId], references: [id], onDelete: Cascade)
+  products       Product[]
+
+  @@unique([name, pointOfSaleId])
+  @@index([pointOfSaleId])
+  @@index([name])
+  @@map("depositos")
 }
 
 model Product {
@@ -56,6 +71,8 @@ model Product {
   category       Category         @relation(fields: [categoryId], references: [id])
   pointOfSaleId  String           @db.Uuid
   pointOfSale    PointOfSale      @relation(fields: [pointOfSaleId], references: [id])
+  depositoId     String?          @db.Uuid
+  deposito       Deposito?        @relation(fields: [depositoId], references: [id])
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
   variants       ProductVariant[]
@@ -63,6 +80,7 @@ model Product {
   @@index([name])
   @@index([categoryId])
   @@index([pointOfSaleId])
+  @@index([depositoId])
   @@map("products")
 }
 

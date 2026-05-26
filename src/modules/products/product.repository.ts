@@ -15,6 +15,10 @@ function buildProductWhereClause(filters: ProductFilters): Prisma.ProductWhereIn
     where.pointOfSaleId = filters.pointOfSaleId;
   }
 
+  if (filters.depositoId) {
+    where.depositoId = filters.depositoId;
+  }
+
   if (filters.search) {
     where.name = { contains: filters.search, mode: 'insensitive' };
   }
@@ -54,6 +58,7 @@ function buildVariantWhereClause(
 const productInclude = {
   category: { select: { id: true, name: true, label: true } },
   pointOfSale: { select: { id: true, name: true, label: true } },
+  deposito: { select: { id: true, name: true, label: true } },
   variants: {
     include: {
       color: { select: { id: true, name: true, label: true, hex: true } },

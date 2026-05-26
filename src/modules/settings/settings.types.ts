@@ -55,6 +55,23 @@ export interface UpdatePointOfSaleInput {
   label?: string;
 }
 
+export interface DepositoResponse {
+  id: string;
+  name: string;
+  label: string;
+  pointOfSaleId: string;
+}
+
+export interface CreateDepositoInput {
+  name: string;
+  label: string;
+}
+
+export interface UpdateDepositoInput {
+  name?: string;
+  label?: string;
+}
+
 export interface CreateSizeInput {
   name: string;
   label: string;

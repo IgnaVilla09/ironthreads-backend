@@ -153,6 +153,53 @@ export const settingsController = {
     }
   },
 
+  // ── Depositos ────────────────────────────────────
+
+  async listDepositos(req: Request, res: Response, next: NextFunction) {
+    try {
+      const depositos = await settingsService.listDepositosByPointOfSale(req.params.pointOfSaleId as string);
+      sendSuccess(res, depositos);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async getDepositoById(req: Request, res: Response, next: NextFunction) {
+    try {
+      const deposito = await settingsService.getDepositoById(req.params.id as string);
+      sendSuccess(res, deposito);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async createDeposito(req: Request, res: Response, next: NextFunction) {
+    try {
+      const deposito = await settingsService.createDeposito(req.params.pointOfSaleId as string, req.body);
+      sendSuccess(res, deposito, 201);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async updateDeposito(req: Request, res: Response, next: NextFunction) {
+    try {
+      const deposito = await settingsService.updateDeposito(req.params.id as string, req.body);
+      sendSuccess(res, deposito);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async deleteDeposito(req: Request, res: Response, next: NextFunction) {
+    try {
+      await settingsService.deleteDeposito(req.params.id as string);
+      res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
+  },
+
   // ── Sizes ───────────────────────────────────────
 
   async listSizes(_req: Request, res: Response, next: NextFunction) {

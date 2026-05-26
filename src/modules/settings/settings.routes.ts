@@ -10,6 +10,8 @@ import {
   updateSizeSchema,
   createPointOfSaleSchema,
   updatePointOfSaleSchema,
+  createDepositoSchema,
+  updateDepositoSchema,
 } from './settings.validators';
 
 const router = Router();
@@ -34,6 +36,13 @@ router.get('/points-of-sale/:id', settingsController.getPointOfSaleById);
 router.post('/points-of-sale', validate(createPointOfSaleSchema), settingsController.createPointOfSale);
 router.put('/points-of-sale/:id', validate(updatePointOfSaleSchema), settingsController.updatePointOfSale);
 router.delete('/points-of-sale/:id', settingsController.deletePointOfSale);
+
+// ── Depositos ─────────────────────────────────────────
+router.get('/points-of-sale/:pointOfSaleId/depositos', settingsController.listDepositos);
+router.get('/depositos/:id', settingsController.getDepositoById);
+router.post('/points-of-sale/:pointOfSaleId/depositos', validate(createDepositoSchema), settingsController.createDeposito);
+router.put('/depositos/:id', validate(updateDepositoSchema), settingsController.updateDeposito);
+router.delete('/depositos/:id', settingsController.deleteDeposito);
 
 // ── Sizes ─────────────────────────────────────────────
 router.get('/sizes', settingsController.listSizes);

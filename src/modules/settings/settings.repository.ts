@@ -80,6 +80,37 @@ export const settingsRepository = {
     return prisma.pointOfSale.delete({ where: { id } });
   },
 
+  // ── Depositos ────────────────────────────────────
+
+  async findAllDepositosByPointOfSale(pointOfSaleId: string) {
+    return prisma.deposito.findMany({
+      where: { pointOfSaleId },
+      orderBy: { name: 'asc' },
+    });
+  },
+
+  async findDepositoById(id: string) {
+    return prisma.deposito.findUnique({ where: { id } });
+  },
+
+  async findDepositoByNameAndPointOfSale(name: string, pointOfSaleId: string) {
+    return prisma.deposito.findUnique({
+      where: { name_pointOfSaleId: { name, pointOfSaleId } },
+    });
+  },
+
+  async createDeposito(data: Prisma.DepositoCreateInput) {
+    return prisma.deposito.create({ data });
+  },
+
+  async updateDeposito(id: string, data: Prisma.DepositoUpdateInput) {
+    return prisma.deposito.update({ where: { id }, data });
+  },
+
+  async deleteDeposito(id: string) {
+    return prisma.deposito.delete({ where: { id } });
+  },
+
   // ── Sizes ───────────────────────────────────────
 
   async findAllSizes() {

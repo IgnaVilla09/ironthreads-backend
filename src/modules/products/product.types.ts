@@ -15,6 +15,7 @@ export interface ProductResponse {
   description: string | null;
   categoryId: string;
   pointOfSaleId: string;
+  depositoId: string | null;
   createdAt: Date;
   updatedAt: Date;
   variants: ProductVariant[];
@@ -25,6 +26,7 @@ export interface CreateProductInput {
   description?: string;
   categoryId: string;
   pointOfSaleId: string;
+  depositoId?: string;
 }
 
 export interface UpdateProductInput {
@@ -32,6 +34,7 @@ export interface UpdateProductInput {
   description?: string;
   categoryId?: string;
   pointOfSaleId?: string;
+  depositoId?: string | null;
 }
 
 export interface CreateVariantInput {
@@ -49,6 +52,7 @@ export interface UpdateVariantInput {
 export interface ProductFilters {
   categoryId?: string;
   pointOfSaleId?: string;
+  depositoId?: string;
   search?: string;
   minStock?: number;
   maxStock?: number;
