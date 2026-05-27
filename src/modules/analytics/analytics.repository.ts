@@ -56,13 +56,13 @@ export const analyticsRepository = {
       select: {
         id: true,
         colorId: true,
-        color: { select: { id: true, name: true, label: true } },
+        color: { select: { id: true, name: true, label: true, hex: true } },
       },
     });
 
     const variantMap = new Map(variants.map((v) => [v.id, v]));
 
-    const colorStock = new Map<string, { colorId: string; colorName: string; totalStock: number; productCount: Set<string> }>();
+    const colorStock = new Map<string, { colorId: string; colorName: string; totalStock: number; productCount: Set<string>; hex: string | null }>();
 
     for (const r of result) {
       const variant = variantMap.get(r.variantId);
@@ -70,9 +70,10 @@ export const analyticsRepository = {
 
       const existing = colorStock.get(variant.colorId) ?? {
         colorId: variant.colorId,
-        colorName: variant.color.label,
+        colorName: variant.color.name,
         totalStock: 0,
         productCount: new Set<string>(),
+        hex: variant.color.hex,
       };
 
       existing.totalStock += r._sum.stock ?? 0;
@@ -86,6 +87,7 @@ export const analyticsRepository = {
         colorName: c.colorName,
         totalStock: c.totalStock,
         productCount: c.productCount.size,
+        hex: c.hex,
       }))
       .sort((a, b) => b.totalStock - a.totalStock);
   },

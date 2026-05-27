@@ -10,6 +10,7 @@ export interface ColorDistribution {
   colorName: string;
   totalStock: number;
   productCount: number;
+  hex: string | null;
 }
 
 export interface LowStockVariant {
