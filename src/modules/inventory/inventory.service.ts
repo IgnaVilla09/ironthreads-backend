@@ -1,3 +1,4 @@
+import ExcelJS from 'exceljs';
 import { inventoryRepository } from './inventory.repository';
 import { productRepository } from '../products/product.repository';
 import { settingsRepository } from '../settings/settings.repository';
@@ -92,5 +93,61 @@ export const inventoryService = {
     logger.info('Setting variant inventory', { variantId, items: items.length });
 
     return inventoryRepository.setVariantInventory(variantId, items);
+  },
+
+  async exportInventoryToExcel(): Promise<Buffer> {
+    logger.info('Exporting inventory to Excel');
+
+    const inventory = await inventoryRepository.findInventory({});
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'Iron Stock';
+    workbook.created = new Date();
+
+    const sheet = workbook.addWorksheet('Inventario');
+
+    sheet.mergeCells(1, 1, 1, 7);
+    const titleRow = sheet.getRow(1);
+    titleRow.getCell(1).value = `Inventario Completo - ${new Date().toLocaleDateString('es-AR')}`;
+    titleRow.font = { bold: true, size: 14, color: { argb: 'FF1F4E79' } };
+    titleRow.alignment = { horizontal: 'center' };
+    titleRow.height = 30;
+
+    const columns = [
+      { header: 'Producto', key: 'producto', width: 35 },
+      { header: 'SKU', key: 'sku', width: 20 },
+      { header: 'Color', key: 'color', width: 18 },
+      { header: 'Talle', key: 'talle', width: 12 },
+      { header: 'Punto de Venta', key: 'pos', width: 25 },
+      { header: 'Depósito', key: 'deposito', width: 20 },
+      { header: 'Stock', key: 'stock', width: 12 },
+    ];
+
+    sheet.columns = columns;
+
+    const headerRow = sheet.getRow(3);
+    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    headerRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF4472C4' },
+    };
+    headerRow.alignment = { horizontal: 'center' };
+
+    let rowIndex = 4;
+    for (const item of inventory) {
+      const row = sheet.getRow(rowIndex);
+      row.getCell(1).value = item.variant.product.name;
+      row.getCell(2).value = item.variant.sku;
+      row.getCell(3).value = item.variant.color.label;
+      row.getCell(4).value = item.variant.size.label;
+      row.getCell(5).value = item.pointOfSale.label;
+      row.getCell(6).value = item.deposito?.label ?? '—';
+      row.getCell(7).value = item.stock;
+      rowIndex++;
+    }
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    return buffer as unknown as Buffer;
   },
 };

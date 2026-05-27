@@ -50,4 +50,16 @@ export const inventoryController = {
       next(error);
     }
   },
+
+  async exportExcel(_req: Request, res: Response, next: NextFunction) {
+    try {
+      const buffer = await inventoryService.exportInventoryToExcel();
+      const filename = `inventario-${new Date().toISOString().split('T')[0]}.xlsx`;
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(buffer);
+    } catch (error) {
+      next(error);
+    }
+  },
 };
