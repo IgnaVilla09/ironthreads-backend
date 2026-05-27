@@ -53,11 +53,14 @@ export const ventasController = {
   async exportExcel(req: Request, res: Response, next: NextFunction) {
     try {
       const { from, to } = req.query;
-      const result = await ventasService.exportSalesToExcel(
+      const buffer = await ventasService.exportSalesToExcel(
         from ? new Date(from as string) : undefined,
         to ? new Date(to as string) : undefined
       );
-      sendSuccess(res, result);
+      const filename = `ventas-${from ?? 'all'}-${to ?? 'all'}.xlsx`;
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(buffer);
     } catch (error) {
       next(error);
     }

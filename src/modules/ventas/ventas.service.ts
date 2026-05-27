@@ -1,3 +1,4 @@
+import ExcelJS from 'exceljs';
 import { prisma } from '../../config/database';
 import { AppError } from '../../shared/errors/app-error';
 import { ventasRepository } from './ventas.repository';
@@ -138,13 +139,128 @@ export const ventasService = {
     return results;
   },
 
-  async exportSalesToExcel(from?: Date, to?: Date) {
+  async exportSalesToExcel(from?: Date, to?: Date): Promise<Buffer> {
     logger.info('Exporting sales to Excel', { from, to });
     const result = await ventasRepository.findSalesByDateRange(
       from ?? new Date(0),
       to ?? new Date()
     );
-    return result;
+
+    const dateLabel = `${from ? from.toLocaleDateString('es-AR') : 'inicio'} - ${to ? to.toLocaleDateString('es-AR') : 'hoy'}`;
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'Iron Stock';
+    workbook.created = new Date();
+
+    const sheet = workbook.addWorksheet('Ventas');
+
+    sheet.mergeCells(1, 1, 1, 9);
+    const titleRow = sheet.getRow(1);
+    titleRow.getCell(1).value = `Informe de Ventas - ${dateLabel}`;
+    titleRow.font = { bold: true, size: 14, color: { argb: 'FF1F4E79' } };
+    titleRow.alignment = { horizontal: 'center' };
+    titleRow.height = 30;
+
+    sheet.mergeCells(2, 1, 2, 9);
+    const summaryRow = sheet.getRow(2);
+    summaryRow.getCell(1).value = `Ventas realizadas: ${result.sales.length} | Artículos vendidos: ${result.totalSold}`;
+    summaryRow.font = { size: 11, italic: true, color: { argb: 'FF555555' } };
+    summaryRow.alignment = { horizontal: 'center' };
+    summaryRow.height = 22;
+
+    sheet.mergeCells(3, 1, 3, 9);
+    const sizesRow = sheet.getRow(3);
+    const topSizes = result.sizes.slice(0, 5).map(s => `${s.sizeName} (${s.quantity})`).join(', ');
+    sizesRow.getCell(1).value = `Talles más vendidos: ${topSizes}`;
+    sizesRow.font = { size: 11, italic: true, color: { argb: 'FF555555' } };
+    sizesRow.alignment = { horizontal: 'center' };
+    sizesRow.height = 22;
+
+    const headerRowNum = 5;
+    const columns = [
+      { header: 'Fecha', key: 'fecha', width: 20 },
+      { header: 'Producto', key: 'producto', width: 35 },
+      { header: 'Color', key: 'color', width: 18 },
+      { header: 'Talle', key: 'talle', width: 12 },
+      { header: 'Cantidad', key: 'cantidad', width: 12 },
+      { header: 'Precio Unit.', key: 'precioUnitario', width: 14 },
+      { header: 'Subtotal', key: 'subtotal', width: 14 },
+      { header: 'Método de Pago', key: 'metodoPago', width: 20 },
+      { header: 'Observaciones', key: 'observaciones', width: 35 },
+    ];
+
+    sheet.columns = columns;
+
+    const headerRow = sheet.getRow(headerRowNum);
+    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    headerRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF4472C4' },
+    };
+    headerRow.alignment = { horizontal: 'center' };
+
+    let rowIndex = headerRowNum + 1;
+    for (const sale of result.sales) {
+      for (const item of sale.items) {
+        const row = sheet.getRow(rowIndex);
+        row.getCell(1).value = sale.createdAt;
+        row.getCell(2).value = item.productName;
+        row.getCell(3).value = item.colorName;
+        row.getCell(4).value = item.sizeName;
+        row.getCell(5).value = item.quantity;
+        row.getCell(6).value = item.unitPrice;
+        row.getCell(7).value = item.quantity * item.unitPrice;
+        row.getCell(8).value = sale.paymentMethod;
+        row.getCell(9).value = sale.observaciones ?? '';
+        rowIndex++;
+      }
+    }
+
+    const summarySheet = workbook.addWorksheet('Resumen por Talle');
+    summarySheet.mergeCells(1, 1, 1, 2);
+    const summaryTitle = summarySheet.getRow(1);
+    summaryTitle.getCell(1).value = `Talles más vendidos - ${dateLabel}`;
+    summaryTitle.font = { bold: true, size: 13, color: { argb: 'FF1F4E79' } };
+    summaryTitle.alignment = { horizontal: 'center' };
+    summaryTitle.height = 28;
+
+    summarySheet.mergeCells(2, 1, 2, 2);
+    const summaryInfo = summarySheet.getRow(2);
+    summaryInfo.getCell(1).value = `Ventas realizadas: ${result.sales.length} | Artículos vendidos: ${result.totalSold}`;
+    summaryInfo.font = { size: 11, italic: true, color: { argb: 'FF555555' } };
+    summaryInfo.alignment = { horizontal: 'center' };
+    summaryInfo.height = 22;
+
+    summarySheet.columns = [
+      { header: 'Talle', key: 'talle', width: 25 },
+      { header: 'Cantidad Vendida', key: 'cantidad', width: 28 },
+    ];
+
+    const summaryHeaderRow = summarySheet.getRow(4);
+    summaryHeaderRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    summaryHeaderRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF4472C4' },
+    };
+    summaryHeaderRow.alignment = { horizontal: 'center' };
+
+    result.sizes.forEach((size, index) => {
+      const row = summarySheet.getRow(index + 5);
+      row.getCell(1).value = size.sizeName;
+      row.getCell(2).value = size.quantity;
+    });
+
+    const totalRowIndex = result.sizes.length + 5;
+    const totalRow = summarySheet.getRow(totalRowIndex);
+    totalRow.getCell(1).value = 'TOTAL';
+    totalRow.getCell(1).font = { bold: true };
+    totalRow.getCell(2).value = result.totalSold;
+    totalRow.getCell(2).font = { bold: true };
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    return buffer as unknown as Buffer;
   },
 };
 
