@@ -4,7 +4,6 @@ export interface ProductVariant {
   colorId: string;
   sizeId: string;
   sku: string;
-  stock: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -14,8 +13,6 @@ export interface ProductResponse {
   name: string;
   description: string | null;
   categoryId: string;
-  pointOfSaleId: string;
-  depositoId: string | null;
   createdAt: Date;
   updatedAt: Date;
   variants: ProductVariant[];
@@ -25,42 +22,32 @@ export interface CreateProductInput {
   name: string;
   description?: string;
   categoryId: string;
-  pointOfSaleId: string;
-  depositoId?: string;
 }
 
 export interface UpdateProductInput {
   name?: string;
   description?: string;
   categoryId?: string;
-  pointOfSaleId?: string;
-  depositoId?: string | null;
+}
+
+export interface InventoryAllocation {
+  pointOfSaleId: string;
+  depositoId?: string;
+  stock: number;
 }
 
 export interface CreateVariantInput {
   colorId: string;
   sizeId: string;
-  stock: number;
+  inventory?: InventoryAllocation[];
 }
 
 export interface UpdateVariantInput {
   colorId?: string;
   sizeId?: string;
-  stock?: number;
 }
 
 export interface ProductFilters {
   categoryId?: string;
-  pointOfSaleId?: string;
-  depositoId?: string;
   search?: string;
-  minStock?: number;
-  maxStock?: number;
-}
-
-export interface VariantFilters {
-  colorId?: string;
-  sizeId?: string;
-  minStock?: number;
-  maxStock?: number;
 }

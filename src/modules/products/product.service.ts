@@ -1,3 +1,4 @@
+import { prisma } from '../../config/database';
 import { AppError } from '../../shared/errors/app-error';
 import { generateSku } from '../../shared/utils/sku-generator';
 import { getPaginationMeta, getPaginationParams } from '../../shared/utils/pagination';
@@ -23,30 +24,43 @@ async function resolveSku(baseSku: string): Promise<string> {
 }
 
 export const productService = {
-  // ── Products ──────────────────────────────────────
-
   async listProducts(rawQuery: Record<string, unknown>) {
     const pagination = getPaginationParams(rawQuery as { page?: string; limit?: string });
 
     const filters: ProductFilters = {
       categoryId: rawQuery.categoryId as string | undefined,
-      pointOfSaleId: rawQuery.pointOfSaleId as string | undefined,
-      depositoId: rawQuery.depositoId as string | undefined,
       search: rawQuery.search as string | undefined,
     };
 
     logger.info('Listing products', { filters, pagination });
 
-    const { products, total } = await productRepository.findAllProducts(
-      filters,
-      pagination
-    );
+    const { products, total } = await productRepository.findAllProducts(filters, pagination);
+
+    const variantIds = products.flatMap((p) => p.variants.map((v) => v.id));
+    const stockMap = new Map<string, number>();
+
+    if (variantIds.length > 0) {
+      const inventoryAgg = await prisma.inventoryItem.groupBy({
+        by: ['variantId'],
+        where: { variantId: { in: variantIds } },
+        _sum: { stock: true },
+      });
+      for (const item of inventoryAgg) {
+        stockMap.set(item.variantId, item._sum.stock ?? 0);
+      }
+    }
+
+    const enrichedProducts = products.map((p) => ({
+      ...p,
+      variants: p.variants.map((v) => ({
+        ...v,
+        stock: stockMap.get(v.id) ?? 0,
+      })),
+    }));
+
     const meta = getPaginationMeta(total, pagination);
 
-    return {
-      products,
-      meta,
-    };
+    return { products: enrichedProducts, meta };
   },
 
   async getProductById(id: string) {
@@ -56,26 +70,42 @@ export const productService = {
       throw AppError.notFound(`Producto con ID ${id} no encontrado`);
     }
 
-    return product;
+    const variantIds = product.variants.map((v) => v.id);
+    const stockMap = new Map<string, number>();
+
+    if (variantIds.length > 0) {
+      const inventoryAgg = await prisma.inventoryItem.groupBy({
+        by: ['variantId'],
+        where: { variantId: { in: variantIds } },
+        _sum: { stock: true },
+      });
+      for (const item of inventoryAgg) {
+        stockMap.set(item.variantId, item._sum.stock ?? 0);
+      }
+    }
+
+    return {
+      ...product,
+      variants: product.variants.map((v) => ({
+        ...v,
+        stock: stockMap.get(v.id) ?? 0,
+      })),
+    };
   },
 
   async createProduct(input: CreateProductInput) {
-    const pointOfSale = await settingsRepository.findPointOfSaleById(input.pointOfSaleId);
-    if (!pointOfSale) {
-      throw AppError.notFound(`Punto de venta con ID ${input.pointOfSaleId} no encontrado`);
-    }
-
     logger.info('Creating product', { name: input.name });
 
     const product = await productRepository.createProduct({
       name: input.name,
       description: input.description ?? null,
       category: { connect: { id: input.categoryId } },
-      pointOfSale: { connect: { id: input.pointOfSaleId } },
-      ...(input.depositoId ? { deposito: { connect: { id: input.depositoId } } } : {}),
     });
 
-    return product;
+    return {
+      ...product,
+      variants: product.variants.map((v) => ({ ...v, stock: 0 })),
+    };
   },
 
   async updateProduct(id: string, input: UpdateProductInput) {
@@ -88,18 +118,32 @@ export const productService = {
     if (input.name !== undefined) updateData.name = input.name;
     if (input.description !== undefined) updateData.description = input.description;
     if (input.categoryId !== undefined) updateData.category = { connect: { id: input.categoryId } };
-    if (input.pointOfSaleId !== undefined) updateData.pointOfSale = { connect: { id: input.pointOfSaleId } };
-    if (input.depositoId !== undefined) {
-      updateData.deposito = input.depositoId ? { connect: { id: input.depositoId } } : { disconnect: true };
-    }
 
     logger.info('Updating product', { id });
 
-    const product = await productRepository.updateProduct(
-      id,
-      updateData as never
-    );
-    return product;
+    const updated = await productRepository.updateProduct(id, updateData as never);
+
+    const variantIds = updated.variants.map((v) => v.id);
+    const stockMap = new Map<string, number>();
+
+    if (variantIds.length > 0) {
+      const inventoryAgg = await prisma.inventoryItem.groupBy({
+        by: ['variantId'],
+        where: { variantId: { in: variantIds } },
+        _sum: { stock: true },
+      });
+      for (const item of inventoryAgg) {
+        stockMap.set(item.variantId, item._sum.stock ?? 0);
+      }
+    }
+
+    return {
+      ...updated,
+      variants: updated.variants.map((v) => ({
+        ...v,
+        stock: stockMap.get(v.id) ?? 0,
+      })),
+    };
   },
 
   async deleteProduct(id: string) {
@@ -113,15 +157,13 @@ export const productService = {
     await productRepository.deleteProduct(id);
   },
 
-  // ── Variants ──────────────────────────────────────
-
   async listVariants(productId: string) {
     const product = await productRepository.findProductById(productId);
     if (!product) {
       throw AppError.notFound(`Producto con ID ${productId} no encontrado`);
     }
 
-    return productRepository.findVariants(productId, {});
+    return productRepository.findVariants(productId);
   },
 
   async getVariantById(id: string) {
@@ -146,7 +188,6 @@ export const productService = {
     if (!color) throw AppError.notFound(`Color con ID ${input.colorId} no encontrado`);
     if (!size) throw AppError.notFound(`Talle con ID ${input.sizeId} no encontrado`);
 
-    // Check if variant with same color+size already exists → add stock
     const existingVariant = await productRepository.findVariantByProductColorSize(
       productId,
       input.colorId,
@@ -154,18 +195,10 @@ export const productService = {
     );
 
     if (existingVariant) {
-      const newStock = existingVariant.stock + input.stock;
-      logger.info('Adding stock to existing variant', {
-        variantId: existingVariant.id,
-        added: input.stock,
-        total: newStock,
-      });
-      return productRepository.updateVariant(existingVariant.id, {
-        stock: newStock,
-      } as never);
+      logger.info('Variant already exists', { variantId: existingVariant.id });
+      return existingVariant;
     }
 
-    // Generate unique SKU (append -ALTER if conflict)
     const baseSku = generateSku(product.name, color.name, size.name);
     const sku = await resolveSku(baseSku);
 
@@ -173,13 +206,25 @@ export const productService = {
 
     const variant = await productRepository.createVariant({
       sku,
-      stock: input.stock,
       product: { connect: { id: productId } },
       color: { connect: { id: input.colorId } },
       size: { connect: { id: input.sizeId } },
     });
 
-    return variant;
+    if (input.inventory && input.inventory.length > 0) {
+      await prisma.inventoryItem.createMany({
+        data: input.inventory.map((inv) => ({
+          variantId: variant.id,
+          pointOfSaleId: inv.pointOfSaleId,
+          depositoId: inv.depositoId ?? null,
+          stock: inv.stock,
+        })),
+      });
+    }
+
+    const totalStock = input.inventory?.reduce((sum, inv) => sum + inv.stock, 0) ?? 0;
+
+    return { ...variant, stock: totalStock };
   },
 
   async updateVariant(id: string, input: UpdateVariantInput) {
@@ -191,7 +236,6 @@ export const productService = {
     const updateData: Record<string, unknown> = {};
     if (input.colorId !== undefined) updateData.color = { connect: { id: input.colorId } };
     if (input.sizeId !== undefined) updateData.size = { connect: { id: input.sizeId } };
-    if (input.stock !== undefined) updateData.stock = input.stock;
 
     const colorId = input.colorId ?? existing.color.id;
     const sizeId = input.sizeId ?? existing.size.id;
@@ -206,7 +250,6 @@ export const productService = {
 
     const baseSku = generateSku(existing.product.name, color.name, size.name);
 
-    // If SKU changed, resolve conflicts with -ALTER
     if (baseSku !== existing.sku) {
       const sku = await resolveSku(baseSku);
       updateData.sku = sku;

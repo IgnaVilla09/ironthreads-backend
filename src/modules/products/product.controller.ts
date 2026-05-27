@@ -51,8 +51,6 @@ export const productController = {
     }
   },
 
-  // ── Variants ──────────────────────────────────────
-
   async listVariants(req: Request, res: Response, next: NextFunction) {
     try {
       const variants = await productService.listVariants(req.params.id as string);

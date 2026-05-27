@@ -2,8 +2,6 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// ─── Seed data ────────────────────────────────────────
-
 interface CategorySeed {
   name: string;
   label: string;
@@ -23,7 +21,6 @@ interface SizeSeed {
 interface VariantSeed {
   colorName: string;
   sizeName: string;
-  stock: number;
 }
 
 interface ProductSeed {
@@ -84,16 +81,16 @@ const catalog: ProductSeed[] = [
     categoryName: 'REMERA',
     description: 'Remera clásica de algodón peinado 24/1. Corte recto, costuras reforzadas y cuello ribeteado.',
     variants: [
-      { colorName: 'NEGRO', sizeName: 'S', stock: 85 },
-      { colorName: 'NEGRO', sizeName: 'M', stock: 120 },
-      { colorName: 'NEGRO', sizeName: 'L', stock: 95 },
-      { colorName: 'NEGRO', sizeName: 'XL', stock: 60 },
-      { colorName: 'BLANCO', sizeName: 'S', stock: 70 },
-      { colorName: 'BLANCO', sizeName: 'M', stock: 110 },
-      { colorName: 'BLANCO', sizeName: 'L', stock: 80 },
-      { colorName: 'BLANCO', sizeName: 'XL', stock: 45 },
-      { colorName: 'GRIS', sizeName: 'M', stock: 65 },
-      { colorName: 'GRIS', sizeName: 'L', stock: 50 },
+      { colorName: 'NEGRO', sizeName: 'S' },
+      { colorName: 'NEGRO', sizeName: 'M' },
+      { colorName: 'NEGRO', sizeName: 'L' },
+      { colorName: 'NEGRO', sizeName: 'XL' },
+      { colorName: 'BLANCO', sizeName: 'S' },
+      { colorName: 'BLANCO', sizeName: 'M' },
+      { colorName: 'BLANCO', sizeName: 'L' },
+      { colorName: 'BLANCO', sizeName: 'XL' },
+      { colorName: 'GRIS', sizeName: 'M' },
+      { colorName: 'GRIS', sizeName: 'L' },
     ],
   },
   {
@@ -101,14 +98,14 @@ const catalog: ProductSeed[] = [
     categoryName: 'REMERA',
     description: 'Remera oversized con mangas anchas y drop de 2 talles. Algodón jersey 30/1.',
     variants: [
-      { colorName: 'NEGRO', sizeName: 'M', stock: 55 },
-      { colorName: 'NEGRO', sizeName: 'L', stock: 70 },
-      { colorName: 'NEGRO', sizeName: 'XL', stock: 40 },
-      { colorName: 'GRIS', sizeName: 'M', stock: 35 },
-      { colorName: 'GRIS', sizeName: 'L', stock: 45 },
-      { colorName: 'GRIS', sizeName: 'XL', stock: 25 },
-      { colorName: 'BLANCO', sizeName: 'M', stock: 30 },
-      { colorName: 'BLANCO', sizeName: 'L', stock: 40 },
+      { colorName: 'NEGRO', sizeName: 'M' },
+      { colorName: 'NEGRO', sizeName: 'L' },
+      { colorName: 'NEGRO', sizeName: 'XL' },
+      { colorName: 'GRIS', sizeName: 'M' },
+      { colorName: 'GRIS', sizeName: 'L' },
+      { colorName: 'GRIS', sizeName: 'XL' },
+      { colorName: 'BLANCO', sizeName: 'M' },
+      { colorName: 'BLANCO', sizeName: 'L' },
     ],
   },
   {
@@ -116,12 +113,12 @@ const catalog: ProductSeed[] = [
     categoryName: 'REMERA',
     description: 'Remera térmica de manga larga en algodón peinado 24/1.',
     variants: [
-      { colorName: 'NEGRO', sizeName: 'S', stock: 40 },
-      { colorName: 'NEGRO', sizeName: 'M', stock: 65 },
-      { colorName: 'NEGRO', sizeName: 'L', stock: 50 },
-      { colorName: 'NEGRO', sizeName: 'XL', stock: 30 },
-      { colorName: 'BLANCO', sizeName: 'M', stock: 45 },
-      { colorName: 'BLANCO', sizeName: 'L', stock: 35 },
+      { colorName: 'NEGRO', sizeName: 'S' },
+      { colorName: 'NEGRO', sizeName: 'M' },
+      { colorName: 'NEGRO', sizeName: 'L' },
+      { colorName: 'NEGRO', sizeName: 'XL' },
+      { colorName: 'BLANCO', sizeName: 'M' },
+      { colorName: 'BLANCO', sizeName: 'L' },
     ],
   },
   {
@@ -129,14 +126,14 @@ const catalog: ProductSeed[] = [
     categoryName: 'PANTALON',
     description: 'Pantalón cargo recto con 6 bolsillos utilitarios. Tela sarza 280 gsm.',
     variants: [
-      { colorName: 'NEGRO', sizeName: 'S', stock: 30 },
-      { colorName: 'NEGRO', sizeName: 'M', stock: 55 },
-      { colorName: 'NEGRO', sizeName: 'L', stock: 45 },
-      { colorName: 'NEGRO', sizeName: 'XL', stock: 25 },
-      { colorName: 'NEGRO', sizeName: 'XXL', stock: 10 },
-      { colorName: 'VERDE', sizeName: 'M', stock: 20 },
-      { colorName: 'VERDE', sizeName: 'L', stock: 15 },
-      { colorName: 'VERDE', sizeName: 'XL', stock: 8 },
+      { colorName: 'NEGRO', sizeName: 'S' },
+      { colorName: 'NEGRO', sizeName: 'M' },
+      { colorName: 'NEGRO', sizeName: 'L' },
+      { colorName: 'NEGRO', sizeName: 'XL' },
+      { colorName: 'NEGRO', sizeName: 'XXL' },
+      { colorName: 'VERDE', sizeName: 'M' },
+      { colorName: 'VERDE', sizeName: 'L' },
+      { colorName: 'VERDE', sizeName: 'XL' },
     ],
   },
   {
@@ -144,13 +141,13 @@ const catalog: ProductSeed[] = [
     categoryName: 'PANTALON',
     description: 'Jogger urbano con puños elastizados. Tela Oxford 320 gsm.',
     variants: [
-      { colorName: 'NEGRO', sizeName: 'S', stock: 35 },
-      { colorName: 'NEGRO', sizeName: 'M', stock: 60 },
-      { colorName: 'NEGRO', sizeName: 'L', stock: 50 },
-      { colorName: 'NEGRO', sizeName: 'XL', stock: 30 },
-      { colorName: 'GRIS', sizeName: 'M', stock: 25 },
-      { colorName: 'GRIS', sizeName: 'L', stock: 20 },
-      { colorName: 'GRIS', sizeName: 'XL', stock: 12 },
+      { colorName: 'NEGRO', sizeName: 'S' },
+      { colorName: 'NEGRO', sizeName: 'M' },
+      { colorName: 'NEGRO', sizeName: 'L' },
+      { colorName: 'NEGRO', sizeName: 'XL' },
+      { colorName: 'GRIS', sizeName: 'M' },
+      { colorName: 'GRIS', sizeName: 'L' },
+      { colorName: 'GRIS', sizeName: 'XL' },
     ],
   },
   {
@@ -158,16 +155,16 @@ const catalog: ProductSeed[] = [
     categoryName: 'BUZO',
     description: 'Buzo canguru clásico con capucha forrada. Perchado 320 gsm.',
     variants: [
-      { colorName: 'NEGRO', sizeName: 'S', stock: 20 },
-      { colorName: 'NEGRO', sizeName: 'M', stock: 45 },
-      { colorName: 'NEGRO', sizeName: 'L', stock: 35 },
-      { colorName: 'NEGRO', sizeName: 'XL', stock: 18 },
-      { colorName: 'NEGRO', sizeName: 'XXL', stock: 8 },
-      { colorName: 'GRIS', sizeName: 'M', stock: 30 },
-      { colorName: 'GRIS', sizeName: 'L', stock: 22 },
-      { colorName: 'GRIS', sizeName: 'XL', stock: 10 },
-      { colorName: 'ROJO', sizeName: 'M', stock: 15 },
-      { colorName: 'ROJO', sizeName: 'L', stock: 10 },
+      { colorName: 'NEGRO', sizeName: 'S' },
+      { colorName: 'NEGRO', sizeName: 'M' },
+      { colorName: 'NEGRO', sizeName: 'L' },
+      { colorName: 'NEGRO', sizeName: 'XL' },
+      { colorName: 'NEGRO', sizeName: 'XXL' },
+      { colorName: 'GRIS', sizeName: 'M' },
+      { colorName: 'GRIS', sizeName: 'L' },
+      { colorName: 'GRIS', sizeName: 'XL' },
+      { colorName: 'ROJO', sizeName: 'M' },
+      { colorName: 'ROJO', sizeName: 'L' },
     ],
   },
   {
@@ -175,12 +172,12 @@ const catalog: ProductSeed[] = [
     categoryName: 'BUZO',
     description: 'Buzo oversized con drop shoulders. Perchado premium 380 gsm.',
     variants: [
-      { colorName: 'NEGRO', sizeName: 'M', stock: 25 },
-      { colorName: 'NEGRO', sizeName: 'L', stock: 35 },
-      { colorName: 'NEGRO', sizeName: 'XL', stock: 20 },
-      { colorName: 'GRIS', sizeName: 'M', stock: 18 },
-      { colorName: 'GRIS', sizeName: 'L', stock: 28 },
-      { colorName: 'GRIS', sizeName: 'XL', stock: 15 },
+      { colorName: 'NEGRO', sizeName: 'M' },
+      { colorName: 'NEGRO', sizeName: 'L' },
+      { colorName: 'NEGRO', sizeName: 'XL' },
+      { colorName: 'GRIS', sizeName: 'M' },
+      { colorName: 'GRIS', sizeName: 'L' },
+      { colorName: 'GRIS', sizeName: 'XL' },
     ],
   },
   {
@@ -188,12 +185,12 @@ const catalog: ProductSeed[] = [
     categoryName: 'CAMPERA',
     description: 'Campera piloto acolchada. Nylon ripstop 200 gsm, impermeable.',
     variants: [
-      { colorName: 'NEGRO', sizeName: 'S', stock: 10 },
-      { colorName: 'NEGRO', sizeName: 'M', stock: 22 },
-      { colorName: 'NEGRO', sizeName: 'L', stock: 18 },
-      { colorName: 'NEGRO', sizeName: 'XL', stock: 8 },
-      { colorName: 'VERDE', sizeName: 'M', stock: 12 },
-      { colorName: 'VERDE', sizeName: 'L', stock: 7 },
+      { colorName: 'NEGRO', sizeName: 'S' },
+      { colorName: 'NEGRO', sizeName: 'M' },
+      { colorName: 'NEGRO', sizeName: 'L' },
+      { colorName: 'NEGRO', sizeName: 'XL' },
+      { colorName: 'VERDE', sizeName: 'M' },
+      { colorName: 'VERDE', sizeName: 'L' },
     ],
   },
   {
@@ -201,11 +198,11 @@ const catalog: ProductSeed[] = [
     categoryName: 'CAMPERA',
     description: 'Campera de jean clásica. Denim 340 gsm elastizado.',
     variants: [
-      { colorName: 'AZUL', sizeName: 'M', stock: 15 },
-      { colorName: 'AZUL', sizeName: 'L', stock: 12 },
-      { colorName: 'AZUL', sizeName: 'XL', stock: 5 },
-      { colorName: 'NEGRO', sizeName: 'M', stock: 10 },
-      { colorName: 'NEGRO', sizeName: 'L', stock: 8 },
+      { colorName: 'AZUL', sizeName: 'M' },
+      { colorName: 'AZUL', sizeName: 'L' },
+      { colorName: 'AZUL', sizeName: 'XL' },
+      { colorName: 'NEGRO', sizeName: 'M' },
+      { colorName: 'NEGRO', sizeName: 'L' },
     ],
   },
   {
@@ -213,13 +210,13 @@ const catalog: ProductSeed[] = [
     categoryName: 'CAMISA',
     description: 'Camisa de lino premium 100% natural. Corte regular fit.',
     variants: [
-      { colorName: 'BLANCO', sizeName: 'S', stock: 20 },
-      { colorName: 'BLANCO', sizeName: 'M', stock: 35 },
-      { colorName: 'BLANCO', sizeName: 'L', stock: 28 },
-      { colorName: 'BLANCO', sizeName: 'XL', stock: 15 },
-      { colorName: 'AZUL', sizeName: 'M', stock: 22 },
-      { colorName: 'AZUL', sizeName: 'L', stock: 18 },
-      { colorName: 'AZUL', sizeName: 'XL', stock: 10 },
+      { colorName: 'BLANCO', sizeName: 'S' },
+      { colorName: 'BLANCO', sizeName: 'M' },
+      { colorName: 'BLANCO', sizeName: 'L' },
+      { colorName: 'BLANCO', sizeName: 'XL' },
+      { colorName: 'AZUL', sizeName: 'M' },
+      { colorName: 'AZUL', sizeName: 'L' },
+      { colorName: 'AZUL', sizeName: 'XL' },
     ],
   },
   {
@@ -227,11 +224,11 @@ const catalog: ProductSeed[] = [
     categoryName: 'CAMISA',
     description: 'Camisa oversized con cuello mao. Algodón popelín 120 gsm.',
     variants: [
-      { colorName: 'NEGRO', sizeName: 'M', stock: 12 },
-      { colorName: 'NEGRO', sizeName: 'L', stock: 18 },
-      { colorName: 'NEGRO', sizeName: 'XL', stock: 10 },
-      { colorName: 'GRIS', sizeName: 'M', stock: 8 },
-      { colorName: 'GRIS', sizeName: 'L', stock: 14 },
+      { colorName: 'NEGRO', sizeName: 'M' },
+      { colorName: 'NEGRO', sizeName: 'L' },
+      { colorName: 'NEGRO', sizeName: 'XL' },
+      { colorName: 'GRIS', sizeName: 'M' },
+      { colorName: 'GRIS', sizeName: 'L' },
     ],
   },
   {
@@ -239,14 +236,14 @@ const catalog: ProductSeed[] = [
     categoryName: 'MUSCULOSA',
     description: 'Musculosa básica de algodón jersey 24/1. Ideal para gimnasio.',
     variants: [
-      { colorName: 'NEGRO', sizeName: 'S', stock: 100 },
-      { colorName: 'NEGRO', sizeName: 'M', stock: 150 },
-      { colorName: 'NEGRO', sizeName: 'L', stock: 120 },
-      { colorName: 'NEGRO', sizeName: 'XL', stock: 80 },
-      { colorName: 'BLANCO', sizeName: 'M', stock: 90 },
-      { colorName: 'BLANCO', sizeName: 'L', stock: 70 },
-      { colorName: 'GRIS', sizeName: 'M', stock: 60 },
-      { colorName: 'GRIS', sizeName: 'L', stock: 45 },
+      { colorName: 'NEGRO', sizeName: 'S' },
+      { colorName: 'NEGRO', sizeName: 'M' },
+      { colorName: 'NEGRO', sizeName: 'L' },
+      { colorName: 'NEGRO', sizeName: 'XL' },
+      { colorName: 'BLANCO', sizeName: 'M' },
+      { colorName: 'BLANCO', sizeName: 'L' },
+      { colorName: 'GRIS', sizeName: 'M' },
+      { colorName: 'GRIS', sizeName: 'L' },
     ],
   },
   {
@@ -254,14 +251,14 @@ const catalog: ProductSeed[] = [
     categoryName: 'SHORT',
     description: 'Short deportivo dry-fit. Cintura elastizada con cordón.',
     variants: [
-      { colorName: 'NEGRO', sizeName: 'S', stock: 40 },
-      { colorName: 'NEGRO', sizeName: 'M', stock: 65 },
-      { colorName: 'NEGRO', sizeName: 'L', stock: 50 },
-      { colorName: 'NEGRO', sizeName: 'XL', stock: 30 },
-      { colorName: 'AZUL', sizeName: 'M', stock: 35 },
-      { colorName: 'AZUL', sizeName: 'L', stock: 25 },
-      { colorName: 'ROJO', sizeName: 'M', stock: 20 },
-      { colorName: 'ROJO', sizeName: 'L', stock: 15 },
+      { colorName: 'NEGRO', sizeName: 'S' },
+      { colorName: 'NEGRO', sizeName: 'M' },
+      { colorName: 'NEGRO', sizeName: 'L' },
+      { colorName: 'NEGRO', sizeName: 'XL' },
+      { colorName: 'AZUL', sizeName: 'M' },
+      { colorName: 'AZUL', sizeName: 'L' },
+      { colorName: 'ROJO', sizeName: 'M' },
+      { colorName: 'ROJO', sizeName: 'L' },
     ],
   },
   {
@@ -269,11 +266,11 @@ const catalog: ProductSeed[] = [
     categoryName: 'SHORT',
     description: 'Short cargo holgado con 4 bolsillos. Sarza 240 gsm.',
     variants: [
-      { colorName: 'NEGRO', sizeName: 'M', stock: 30 },
-      { colorName: 'NEGRO', sizeName: 'L', stock: 25 },
-      { colorName: 'NEGRO', sizeName: 'XL', stock: 15 },
-      { colorName: 'VERDE', sizeName: 'M', stock: 18 },
-      { colorName: 'VERDE', sizeName: 'L', stock: 12 },
+      { colorName: 'NEGRO', sizeName: 'M' },
+      { colorName: 'NEGRO', sizeName: 'L' },
+      { colorName: 'NEGRO', sizeName: 'XL' },
+      { colorName: 'VERDE', sizeName: 'M' },
+      { colorName: 'VERDE', sizeName: 'L' },
     ],
   },
   {
@@ -281,13 +278,13 @@ const catalog: ProductSeed[] = [
     categoryName: 'BERMUDA',
     description: 'Bermuda de denim elastizado 280 gsm. Corte moderno.',
     variants: [
-      { colorName: 'AZUL', sizeName: 'S', stock: 15 },
-      { colorName: 'AZUL', sizeName: 'M', stock: 30 },
-      { colorName: 'AZUL', sizeName: 'L', stock: 22 },
-      { colorName: 'AZUL', sizeName: 'XL', stock: 10 },
-      { colorName: 'NEGRO', sizeName: 'M', stock: 20 },
-      { colorName: 'NEGRO', sizeName: 'L', stock: 16 },
-      { colorName: 'NEGRO', sizeName: 'XL', stock: 8 },
+      { colorName: 'AZUL', sizeName: 'S' },
+      { colorName: 'AZUL', sizeName: 'M' },
+      { colorName: 'AZUL', sizeName: 'L' },
+      { colorName: 'AZUL', sizeName: 'XL' },
+      { colorName: 'NEGRO', sizeName: 'M' },
+      { colorName: 'NEGRO', sizeName: 'L' },
+      { colorName: 'NEGRO', sizeName: 'XL' },
     ],
   },
   {
@@ -295,12 +292,12 @@ const catalog: ProductSeed[] = [
     categoryName: 'ACCESORIO',
     description: 'Gorra trucker 5 paneles. Malla transpirable, cierre clip.',
     variants: [
-      { colorName: 'NEGRO', sizeName: 'M', stock: 12 },
-      { colorName: 'NEGRO', sizeName: 'L', stock: 8 },
-      { colorName: 'ROJO', sizeName: 'M', stock: 5 },
-      { colorName: 'ROJO', sizeName: 'L', stock: 3 },
-      { colorName: 'AZUL', sizeName: 'M', stock: 7 },
-      { colorName: 'AZUL', sizeName: 'L', stock: 4 },
+      { colorName: 'NEGRO', sizeName: 'M' },
+      { colorName: 'NEGRO', sizeName: 'L' },
+      { colorName: 'ROJO', sizeName: 'M' },
+      { colorName: 'ROJO', sizeName: 'L' },
+      { colorName: 'AZUL', sizeName: 'M' },
+      { colorName: 'AZUL', sizeName: 'L' },
     ],
   },
   {
@@ -308,14 +305,12 @@ const catalog: ProductSeed[] = [
     categoryName: 'ACCESORIO',
     description: 'Mochila urbana 25 L con compartimento para notebook 15".',
     variants: [
-      { colorName: 'NEGRO', sizeName: 'M', stock: 18 },
-      { colorName: 'NEGRO', sizeName: 'L', stock: 10 },
-      { colorName: 'GRIS', sizeName: 'M', stock: 8 },
+      { colorName: 'NEGRO', sizeName: 'M' },
+      { colorName: 'NEGRO', sizeName: 'L' },
+      { colorName: 'GRIS', sizeName: 'M' },
     ],
   },
 ];
-
-// ─── Main ─────────────────────────────────────────────
 
 function fmt(n: number): string {
   return new Intl.NumberFormat('es-AR').format(n);
@@ -326,23 +321,40 @@ async function main() {
   console.log('        IRON STOCK — Database Seed');
   console.log('═══════════════════════════════════════════\n');
 
-  // ── 1. Clean ──────────────────────────────────────
   console.log('🧹 Cleaning existing data...');
+  await prisma.stockTransfer.deleteMany();
+  await prisma.saleItem.deleteMany();
+  await prisma.sale.deleteMany();
+  await prisma.inventoryItem.deleteMany();
   await prisma.productVariant.deleteMany();
   await prisma.product.deleteMany();
   await prisma.pointOfSale.deleteMany();
+  await prisma.deposito.deleteMany();
   await prisma.category.deleteMany();
   await prisma.color.deleteMany();
   await prisma.size.deleteMany();
   console.log('   ✓ Done\n');
 
-  // ── 2. Seed reference tables ──────────────────────
   console.log('📁 Seeding reference data...');
 
-  const pointOfSale = await prisma.pointOfSale.create({
+  const deptoPos = await prisma.pointOfSale.create({
     data: { name: 'DEPARTAMENTO', label: 'Departamento' },
   });
-  console.log('   ✓ 1 point of sale');
+  const gymPos = await prisma.pointOfSale.create({
+    data: { name: 'GIMNASIO', label: 'Gimnasio' },
+  });
+
+  const deptoCaja1 = await prisma.deposito.create({
+    data: { name: 'CAJA1', label: 'Caja 1', pointOfSaleId: deptoPos.id },
+  });
+  const deptoCaja2 = await prisma.deposito.create({
+    data: { name: 'CAJA2', label: 'Caja 2', pointOfSaleId: deptoPos.id },
+  });
+  const gymEstante = await prisma.deposito.create({
+    data: { name: 'ESTANTE_A', label: 'Estante A', pointOfSaleId: gymPos.id },
+  });
+
+  console.log('   ✓ 2 points of sale, 3 depositos');
 
   const categoryMap = new Map<string, string>();
   for (const cat of categories) {
@@ -365,7 +377,7 @@ async function main() {
   }
   console.log(`   ✓ ${sizes.length} sizes\n`);
 
-  // ── 3. Seed products with variants ────────────────
+  // Seed products and variants, then create inventory items
   let totalVariants = 0;
   let totalStock = 0;
 
@@ -381,47 +393,56 @@ async function main() {
         name: productData.name,
         description: productData.description,
         categoryId,
-        pointOfSaleId: pointOfSale.id,
-        variants: {
-          create: productData.variants.map((v) => {
-            const colorId = colorMap.get(v.colorName);
-            const sizeId = sizeMap.get(v.sizeName);
-            if (!colorId || !sizeId) {
-              throw new Error(
-                `Missing color "${v.colorName}" or size "${v.sizeName}" for ${productData.name}`
-              );
-            }
-            return {
-              colorId,
-              sizeId,
-              stock: v.stock,
-              sku: generateSku(productData.name, v.colorName, v.sizeName),
-            };
-          }),
-        },
       },
-      include: { variants: true },
     });
 
-    const variantCount = product.variants.length;
-    const productStock = product.variants.reduce((s, v) => s + v.stock, 0);
-    totalVariants += variantCount;
-    totalStock += productStock;
+    for (const v of productData.variants) {
+      const colorId = colorMap.get(v.colorName);
+      const sizeId = sizeMap.get(v.sizeName);
+      if (!colorId || !sizeId) {
+        throw new Error(`Missing color "${v.colorName}" or size "${v.sizeName}" for ${productData.name}`);
+      }
 
-    const stockLabel =
-      productStock < 30
-        ? '⚠️ Low'
-        : productStock < 100
-          ? '📦 Med'
-          : '✅ High';
+      const variant = await prisma.productVariant.create({
+        data: {
+          sku: generateSku(productData.name, v.colorName, v.sizeName),
+          productId: product.id,
+          colorId,
+          sizeId,
+        },
+      });
+
+      const stockInDepto = Math.floor(Math.random() * 50) + 5;
+      const stockInGym = Math.floor(Math.random() * 20) + 2;
+
+      await prisma.inventoryItem.create({
+        data: {
+          variantId: variant.id,
+          pointOfSaleId: deptoPos.id,
+          depositoId: deptoCaja1.id,
+          stock: stockInDepto,
+        },
+      });
+
+      await prisma.inventoryItem.create({
+        data: {
+          variantId: variant.id,
+          pointOfSaleId: gymPos.id,
+          depositoId: gymEstante.id,
+          stock: stockInGym,
+        },
+      });
+
+      totalVariants++;
+      totalStock += stockInDepto + stockInGym;
+    }
 
     console.log(
-      `  ${stockLabel}  ${productData.name.padEnd(24)} ` +
-      `│ ${String(variantCount).padStart(2)} vars │ ${fmt(productStock).padStart(5)} units`
+      `  📦  ${productData.name.padEnd(24)} ` +
+      `│ ${String(productData.variants.length).padStart(2)} vars │ ${fmt(totalStock).padStart(5)} units (total)`
     );
   }
 
-  // ── 4. Summary ────────────────────────────────────
   console.log('\n═══════════════════════════════════════════');
   console.log('                  SUMMARY');
   console.log('═══════════════════════════════════════════\n');
@@ -429,8 +450,9 @@ async function main() {
   console.log(`   📦  Products:     ${catalog.length}`);
   console.log(`   🏷️   Variants:    ${totalVariants}`);
   console.log(`   📊  Total Stock:  ${fmt(totalStock)} units`);
+  console.log(`   🏪  Points of Sale: Departamento + Gimnasio`);
+  console.log(`   📋  Each variant has stock in BOTH locations\n`);
 
-  console.log('\n═══════════════════════════════════════════');
   console.log('   ✅  Seeding completed successfully!');
   console.log('═══════════════════════════════════════════');
 }

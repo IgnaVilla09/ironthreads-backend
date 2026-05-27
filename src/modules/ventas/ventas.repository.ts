@@ -2,21 +2,13 @@ import { prisma } from '../../config/database';
 import { PaymentMethod } from '@prisma/client';
 
 export const ventasRepository = {
-  async findVariantWithDetails(variantId: string) {
-    return prisma.productVariant.findUnique({
-      where: { id: variantId },
-      include: {
-        product: { select: { name: true } },
-        color: { select: { name: true, label: true } },
-        size: { select: { name: true, label: true } },
-      },
-    });
-  },
-
   async createSaleWithItems(
     paymentMethod: string,
+    pointOfSaleId: string | null,
+    depositoId: string | null,
     items: Array<{
       variantId: string;
+      inventoryItemId: string | null;
       productName: string;
       colorName: string;
       sizeName: string;
@@ -32,12 +24,15 @@ export const ventasRepository = {
       const sale = await tx.sale.create({
         data: {
           paymentMethod: paymentMethod as PaymentMethod,
+          pointOfSaleId,
+          depositoId,
           total,
           observaciones,
           items: {
             createMany: {
               data: items.map((item) => ({
                 variantId: item.variantId,
+                inventoryItemId: item.inventoryItemId,
                 productName: item.productName,
                 colorName: item.colorName,
                 sizeName: item.sizeName,
@@ -52,6 +47,7 @@ export const ventasRepository = {
             select: {
               id: true,
               variantId: true,
+              inventoryItemId: true,
               productName: true,
               colorName: true,
               sizeName: true,
@@ -63,13 +59,37 @@ export const ventasRepository = {
       });
 
       for (const item of items) {
-        await tx.productVariant.update({
-          where: { id: item.variantId },
-          data: { stock: { decrement: item.quantity } },
-        });
+        if (item.inventoryItemId) {
+          await tx.inventoryItem.update({
+            where: { id: item.inventoryItemId },
+            data: { stock: { decrement: item.quantity } },
+          });
+        }
       }
 
       return sale;
+    });
+  },
+
+  async findInventoryItem(variantId: string, pointOfSaleId: string, depositoId: string | null) {
+    return prisma.inventoryItem.findFirst({
+      where: {
+        variantId,
+        pointOfSaleId,
+        depositoId: depositoId ?? null,
+      },
+      select: { id: true, stock: true },
+    });
+  },
+
+  async findVariantWithDetails(variantId: string) {
+    return prisma.productVariant.findUnique({
+      where: { id: variantId },
+      include: {
+        product: { select: { name: true } },
+        color: { select: { name: true, label: true } },
+        size: { select: { name: true, label: true } },
+      },
     });
   },
 
@@ -81,10 +101,13 @@ export const ventasRepository = {
         skip,
         take: limit,
         include: {
+          pointOfSale: { select: { id: true, name: true, label: true } },
+          deposito: { select: { id: true, name: true, label: true } },
           items: {
             select: {
               id: true,
               variantId: true,
+              inventoryItemId: true,
               productName: true,
               colorName: true,
               sizeName: true,
@@ -105,10 +128,13 @@ export const ventasRepository = {
     return prisma.sale.findUnique({
       where: { id },
       include: {
+        pointOfSale: { select: { id: true, name: true, label: true } },
+        deposito: { select: { id: true, name: true, label: true } },
         items: {
           select: {
             id: true,
             variantId: true,
+            inventoryItemId: true,
             productName: true,
             colorName: true,
             sizeName: true,
