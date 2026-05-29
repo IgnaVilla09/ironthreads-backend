@@ -62,4 +62,28 @@ export const inventoryController = {
       next(error);
     }
   },
+
+  async exportTransfersExcel(_req: Request, res: Response, next: NextFunction) {
+    try {
+      const buffer = await inventoryService.exportTransfersToExcel();
+      const filename = `transferencias-${new Date().toISOString().split('T')[0]}.xlsx`;
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(buffer);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async exportInventoryByPos(_req: Request, res: Response, next: NextFunction) {
+    try {
+      const buffer = await inventoryService.exportInventoryByPosToZip();
+      const filename = `inventario-por-punto-de-venta-${new Date().toISOString().split('T')[0]}.zip`;
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(buffer);
+    } catch (error) {
+      next(error);
+    }
+  },
 };

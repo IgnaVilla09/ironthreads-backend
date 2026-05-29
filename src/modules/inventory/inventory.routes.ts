@@ -7,6 +7,8 @@ const router = Router();
 
 router.get('/', inventoryController.list);
 router.get('/export', inventoryController.exportExcel);
+router.get('/export-by-pos', inventoryController.exportInventoryByPos);
+router.get('/transfers/export', inventoryController.exportTransfersExcel);
 router.get('/variants/:variantId', inventoryController.getByVariant);
 router.put('/variants/:variantId', validate(setInventorySchema), inventoryController.setVariantInventory);
 router.post('/transfer', validate(transferStockSchema), inventoryController.transfer);

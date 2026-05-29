@@ -1,4 +1,5 @@
 import ExcelJS from 'exceljs';
+import JSZip from 'jszip';
 import { inventoryRepository } from './inventory.repository';
 import { productRepository } from '../products/product.repository';
 import { settingsRepository } from '../settings/settings.repository';
@@ -149,5 +150,123 @@ export const inventoryService = {
 
     const buffer = await workbook.xlsx.writeBuffer();
     return buffer as unknown as Buffer;
+  },
+
+  async exportTransfersToExcel(): Promise<Buffer> {
+    logger.info('Exporting transfers to Excel');
+
+    const { transfers } = await inventoryRepository.findTransfers({}, { page: 1, limit: 10000 });
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'Iron Stock';
+    workbook.created = new Date();
+
+    const sheet = workbook.addWorksheet('Transferencias');
+
+    sheet.mergeCells(1, 1, 1, 7);
+    const titleRow = sheet.getRow(1);
+    titleRow.getCell(1).value = `Historial de Transferencias - ${new Date().toLocaleDateString('es-AR')}`;
+    titleRow.font = { bold: true, size: 14, color: { argb: 'FF1F4E79' } };
+    titleRow.alignment = { horizontal: 'center' };
+    titleRow.height = 30;
+
+    const columns = [
+      { header: 'Fecha', key: 'fecha', width: 22 },
+      { header: 'Producto', key: 'producto', width: 35 },
+      { header: 'SKU', key: 'sku', width: 20 },
+      { header: 'Variante', key: 'variante', width: 25 },
+      { header: 'Origen', key: 'origen', width: 30 },
+      { header: 'Destino', key: 'destino', width: 30 },
+      { header: 'Cantidad', key: 'cantidad', width: 12 },
+    ];
+
+    sheet.columns = columns;
+
+    const headerRow = sheet.getRow(3);
+    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    headerRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF4472C4' },
+    };
+    headerRow.alignment = { horizontal: 'center' };
+
+    let rowIndex = 4;
+    for (const t of transfers) {
+      const row = sheet.getRow(rowIndex);
+      row.getCell(1).value = new Date(t.createdAt).toLocaleString('es-AR');
+      row.getCell(2).value = t.variant.product.name;
+      row.getCell(3).value = t.variant.sku;
+      row.getCell(4).value = `${t.variant.color.label} / ${t.variant.size.label}`;
+      row.getCell(5).value = t.fromPointOfSale.label + (t.fromDeposito ? ` / ${t.fromDeposito.label}` : '');
+      row.getCell(6).value = t.toPointOfSale.label + (t.toDeposito ? ` / ${t.toDeposito.label}` : '');
+      row.getCell(7).value = t.quantity;
+      rowIndex++;
+    }
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    return buffer as unknown as Buffer;
+  },
+
+  async exportInventoryByPosToZip(): Promise<Buffer> {
+    logger.info('Exporting inventory by POS to ZIP');
+
+    const allPos = await settingsRepository.findAllPointsOfSale();
+    const zip = new JSZip();
+
+    for (const pos of allPos) {
+      const inventory = await inventoryRepository.findInventory({ pointOfSaleId: pos.id });
+
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = 'Iron Stock';
+      workbook.created = new Date();
+
+      const sheet = workbook.addWorksheet('Inventario');
+
+      sheet.mergeCells(1, 1, 1, 6);
+      const titleRow = sheet.getRow(1);
+      titleRow.getCell(1).value = `${pos.label} - ${new Date().toLocaleDateString('es-AR')}`;
+      titleRow.font = { bold: true, size: 14, color: { argb: 'FF1F4E79' } };
+      titleRow.alignment = { horizontal: 'center' };
+      titleRow.height = 30;
+
+      const columns = [
+        { header: 'Producto', key: 'producto', width: 35 },
+        { header: 'SKU', key: 'sku', width: 20 },
+        { header: 'Color', key: 'color', width: 18 },
+        { header: 'Talle', key: 'talle', width: 12 },
+        { header: 'Depósito', key: 'deposito', width: 20 },
+        { header: 'Stock', key: 'stock', width: 12 },
+      ];
+
+      sheet.columns = columns;
+
+      const headerRow = sheet.getRow(3);
+      headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      headerRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF4472C4' },
+      };
+      headerRow.alignment = { horizontal: 'center' };
+
+      let rowIndex = 4;
+      for (const item of inventory) {
+        const row = sheet.getRow(rowIndex);
+        row.getCell(1).value = item.variant.product.name;
+        row.getCell(2).value = item.variant.sku;
+        row.getCell(3).value = item.variant.color.label;
+        row.getCell(4).value = item.variant.size.label;
+        row.getCell(5).value = item.deposito?.label ?? '—';
+        row.getCell(6).value = item.stock;
+        rowIndex++;
+      }
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const sanitizedName = pos.label.replace(/[^a-zA-Z0-9_-]/g, '_');
+      zip.file(`${sanitizedName}-inventario.xlsx`, buffer as unknown as Buffer);
+    }
+
+    return zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' }) as unknown as Promise<Buffer>;
   },
 };
