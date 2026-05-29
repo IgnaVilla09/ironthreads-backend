@@ -209,6 +209,8 @@ export const inventoryRepository = {
           },
           fromPointOfSale: { select: { id: true, name: true, label: true } },
           toPointOfSale: { select: { id: true, name: true, label: true } },
+          fromDeposito: { select: { id: true, name: true, label: true } },
+          toDeposito: { select: { id: true, name: true, label: true } },
         },
         orderBy: { createdAt: 'desc' },
       }),

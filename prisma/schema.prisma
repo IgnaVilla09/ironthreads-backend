@@ -60,6 +60,8 @@ model Deposito {
   pointOfSale    PointOfSale     @relation(fields: [pointOfSaleId], references: [id], onDelete: Cascade)
   inventory      InventoryItem[]
   sales          Sale[]
+  transfersFrom  StockTransfer[] @relation("stockTransferFromDeposito")
+  transfersTo    StockTransfer[] @relation("stockTransferToDeposito")
 
   @@unique([name, pointOfSaleId])
   @@index([pointOfSaleId])
@@ -135,6 +137,8 @@ model StockTransfer {
   variant           ProductVariant  @relation(fields: [variantId], references: [id])
   fromPointOfSale   PointOfSale     @relation("stockTransferFrom", fields: [fromPointOfSaleId], references: [id])
   toPointOfSale     PointOfSale     @relation("stockTransferTo", fields: [toPointOfSaleId], references: [id])
+  fromDeposito      Deposito?       @relation("stockTransferFromDeposito", fields: [fromDepositoId], references: [id])
+  toDeposito        Deposito?       @relation("stockTransferToDeposito", fields: [toDepositoId], references: [id])
 
   @@index([createdAt])
   @@index([variantId])
