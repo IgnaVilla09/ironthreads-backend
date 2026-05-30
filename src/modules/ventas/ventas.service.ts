@@ -35,7 +35,7 @@ export const ventasService = {
       const inventoryItem = await ventasRepository.findInventoryItem(
         item.variantId,
         input.pointOfSaleId,
-        input.depositoId ?? null
+        input.depositoId
       );
 
       if (!inventoryItem) {
@@ -111,12 +111,20 @@ export const ventasService = {
       let available = 0;
 
       if (pointOfSaleId) {
-        const inventoryItem = await ventasRepository.findInventoryItem(
-          item.variantId,
-          pointOfSaleId,
-          depositoId ?? null
-        );
-        available = inventoryItem?.stock ?? 0;
+        if (depositoId) {
+          const inventoryItem = await ventasRepository.findInventoryItem(
+            item.variantId,
+            pointOfSaleId,
+            depositoId
+          );
+          available = inventoryItem?.stock ?? 0;
+        } else {
+          const result = await prisma.inventoryItem.aggregate({
+            where: { variantId: item.variantId, pointOfSaleId },
+            _sum: { stock: true },
+          });
+          available = result._sum.stock ?? 0;
+        }
       } else {
         const items = await prisma.inventoryItem.aggregate({
           where: { variantId: item.variantId },

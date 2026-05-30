@@ -71,14 +71,15 @@ export const ventasRepository = {
     });
   },
 
-  async findInventoryItem(variantId: string, pointOfSaleId: string, depositoId: string | null) {
+  async findInventoryItem(variantId: string, pointOfSaleId: string, depositoId?: string | null) {
+    const where: any = { variantId, pointOfSaleId };
+    if (depositoId !== undefined) {
+      where.depositoId = depositoId;
+    }
     return prisma.inventoryItem.findFirst({
-      where: {
-        variantId,
-        pointOfSaleId,
-        depositoId: depositoId ?? null,
-      },
-      select: { id: true, stock: true },
+      where,
+      select: { id: true, stock: true, depositoId: true },
+      orderBy: { stock: 'desc' },
     });
   },
 
