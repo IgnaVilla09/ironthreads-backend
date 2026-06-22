@@ -17,6 +17,10 @@ export class AppError extends Error {
     return new AppError(400, 'BAD_REQUEST', message, details);
   }
 
+  static unauthorized(message: string): AppError {
+    return new AppError(401, 'UNAUTHORIZED', message);
+  }
+
   static notFound(message: string): AppError {
     return new AppError(404, 'NOT_FOUND', message);
   }

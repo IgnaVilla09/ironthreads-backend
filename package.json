@@ -7,6 +7,7 @@
     "build": "prisma generate && tsc",
     "start": "node dist/index.js",
     "render:start": "node dist/index.js",
+    "auth:create-user": "tsx --env-file .env src/scripts/create-auth-user.ts",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
     "prisma:pull": "prisma db pull",
