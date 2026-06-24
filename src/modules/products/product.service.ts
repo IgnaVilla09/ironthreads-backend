@@ -99,6 +99,8 @@ export const productService = {
     const product = await productRepository.createProduct({
       name: input.name,
       description: input.description ?? null,
+      imageUrl: input.imageUrl ?? null,
+      price: input.price ?? null,
       category: { connect: { id: input.categoryId } },
     });
 
@@ -118,6 +120,8 @@ export const productService = {
     if (input.name !== undefined) updateData.name = input.name;
     if (input.description !== undefined) updateData.description = input.description;
     if (input.categoryId !== undefined) updateData.category = { connect: { id: input.categoryId } };
+    if (input.imageUrl !== undefined) updateData.imageUrl = input.imageUrl;
+    if (input.price !== undefined) updateData.price = input.price;
 
     logger.info('Updating product', { id });
 

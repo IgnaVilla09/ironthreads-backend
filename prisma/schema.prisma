@@ -75,6 +75,7 @@ model PointOfSale {
   depositos           Deposito[]
   inventory           InventoryItem[]
   sales               Sale[]
+  catalogOrders       CatalogOrder[]
   transfersFrom       StockTransfer[] @relation("stockTransferFrom")
   transfersTo         StockTransfer[] @relation("stockTransferTo")
 
@@ -104,10 +105,13 @@ model Product {
   name        String
   description String?
   categoryId  String           @db.Uuid
+  imageUrl    String?          @map("image_url")
+  price       Int?
   category    Category         @relation(fields: [categoryId], references: [id])
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   variants    ProductVariant[]
+  catalogOrderItems CatalogOrderItem[]
 
   @@index([name])
   @@index([categoryId])
@@ -128,6 +132,7 @@ model ProductVariant {
   inventory InventoryItem[]
   saleItems SaleItem[]
   transfers StockTransfer[]
+  catalogOrderItems CatalogOrderItem[]
 
   @@index([productId])
   @@index([colorId])
@@ -183,6 +188,17 @@ enum PaymentMethod {
   @@map("payment_method")
 }
 
+enum CatalogOrderStatus {
+  PENDING_PAYMENT
+  PAYMENT_REPORTED
+  CONFIRMED
+  CANCELLED
+  REJECTED
+  OUT_OF_STOCK
+
+  @@map("catalog_order_status")
+}
+
 model Sale {
   id            String        @id @default(uuid()) @db.Uuid
   pointOfSaleId String?       @db.Uuid
@@ -194,6 +210,7 @@ model Sale {
   observaciones String?
   createdAt     DateTime      @default(now())
   items         SaleItem[]
+  catalogOrder  CatalogOrder?
 
   @@index([createdAt])
   @@index([pointOfSaleId])
@@ -219,4 +236,54 @@ model SaleItem {
   @@index([variantId])
   @@index([inventoryItemId])
   @@map("sale_items")
+}
+
+model CatalogOrder {
+  id                String             @id @default(uuid()) @db.Uuid
+  pointOfSaleId     String             @db.Uuid @map("point_of_sale_id")
+  saleId            String?            @unique @db.Uuid @map("sale_id")
+  status            CatalogOrderStatus @default(PENDING_PAYMENT)
+  customerFirstName String             @map("customer_first_name")
+  customerLastName  String             @map("customer_last_name")
+  customerPhone     String             @map("customer_phone")
+  paymentMethod     PaymentMethod      @map("payment_method")
+  total             Int
+  notes             String?
+  whatsAppProofSent Boolean            @default(false) @map("whatsapp_proof_sent")
+  confirmedAt       DateTime?          @map("confirmed_at")
+  cancelledAt       DateTime?          @map("cancelled_at")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+
+  pointOfSale PointOfSale       @relation(fields: [pointOfSaleId], references: [id])
+  sale        Sale?             @relation(fields: [saleId], references: [id])
+  items       CatalogOrderItem[]
+
+  @@index([status])
+  @@index([pointOfSaleId])
+  @@index([createdAt])
+  @@index([status, createdAt])
+  @@map("catalog_orders")
+}
+
+model CatalogOrderItem {
+  id                  String         @id @default(uuid()) @db.Uuid
+  orderId             String         @db.Uuid @map("order_id")
+  productId           String         @db.Uuid @map("product_id")
+  variantId           String         @db.Uuid @map("variant_id")
+  productNameSnapshot String         @map("product_name_snapshot")
+  colorNameSnapshot   String         @map("color_name_snapshot")
+  sizeNameSnapshot    String         @map("size_name_snapshot")
+  unitPriceSnapshot   Int            @map("unit_price_snapshot")
+  quantity            Int
+  createdAt           DateTime       @default(now()) @map("created_at")
+
+  order   CatalogOrder   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product        @relation(fields: [productId], references: [id])
+  variant ProductVariant @relation(fields: [variantId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
+  @@index([variantId])
+  @@map("catalog_order_items")
 }

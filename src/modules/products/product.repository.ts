@@ -33,6 +33,8 @@ const variantInclude = {
     select: {
       id: true,
       name: true,
+      imageUrl: true,
+      price: true,
       category: { select: { id: true, name: true, label: true } },
     },
   },

@@ -1,6 +1,10 @@
 import { prisma } from '../../config/database';
 import { Prisma } from '@prisma/client';
 
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
 export const settingsRepository = {
   // ── Categories ──────────────────────────────────
 
@@ -66,6 +70,19 @@ export const settingsRepository = {
 
   async findPointOfSaleByName(name: string) {
     return prisma.pointOfSale.findUnique({ where: { name } });
+  },
+
+  async findPointOfSaleByIdentifier(identifier: string) {
+    const normalizedIdentifier = identifier.trim();
+    return prisma.pointOfSale.findFirst({
+      where: {
+        OR: [
+          ...(isUuid(normalizedIdentifier) ? [{ id: normalizedIdentifier }] : []),
+          { name: normalizedIdentifier.toUpperCase() },
+          { label: { equals: normalizedIdentifier, mode: 'insensitive' } },
+        ],
+      },
+    });
   },
 
   async createPointOfSale(data: Prisma.PointOfSaleCreateInput) {
