@@ -1,6 +1,53 @@
 import { prisma } from '../../config/database';
 import { calculatePercentage } from '../../shared/utils/percentage';
 
+async function getProductStockTotals() {
+  const products = await prisma.product.findMany({
+    include: {
+      category: { select: { id: true, name: true, label: true } },
+      variants: {
+        select: {
+          id: true,
+        },
+      },
+    },
+    orderBy: { name: 'asc' },
+  });
+
+  const variantIds = products.flatMap((product) => product.variants.map((variant) => variant.id));
+  const variantStockMap = new Map<string, number>();
+
+  if (variantIds.length > 0) {
+    const inventoryTotals = await prisma.inventoryItem.groupBy({
+      by: ['variantId'],
+      where: { variantId: { in: variantIds } },
+      _sum: { stock: true },
+    });
+
+    for (const item of inventoryTotals) {
+      variantStockMap.set(item.variantId, item._sum.stock ?? 0);
+    }
+  }
+
+  return products.map((product) => {
+    const totalStock = product.variants.reduce(
+      (sum, variant) => sum + (variantStockMap.get(variant.id) ?? 0),
+      0
+    );
+
+    return {
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      imageUrl: product.imageUrl,
+      price: product.price,
+      category: product.category,
+      variantsCount: product.variants.length,
+      totalStock,
+    };
+  });
+}
+
 export const analyticsRepository = {
   async countBySize() {
     const result = await prisma.inventoryItem.groupBy({
@@ -93,21 +140,11 @@ export const analyticsRepository = {
   },
 
   async findLowStock(threshold: number = 3) {
-    return prisma.inventoryItem.findMany({
-      where: { stock: { lt: threshold } },
-      include: {
-        variant: {
-          include: {
-            product: { select: { id: true, name: true } },
-            color: { select: { id: true, name: true, label: true, hex: true } },
-            size: { select: { id: true, name: true, label: true } },
-          },
-        },
-        pointOfSale: { select: { id: true, name: true, label: true } },
-        deposito: { select: { id: true, name: true, label: true } },
-      },
-      orderBy: { stock: 'asc' },
-    });
+    const products = await getProductStockTotals();
+
+    return products
+      .filter((product) => product.totalStock <= threshold)
+      .sort((a, b) => a.totalStock - b.totalStock || a.name.localeCompare(b.name));
   },
 
   async bestSellingSizes(limit: number = 10) {
@@ -127,23 +164,21 @@ export const analyticsRepository = {
   },
 
   async getGeneralStats() {
-    const [totalProducts, totalStock, categoryCount, lowStockCount, lowStockAgg] =
-      await Promise.all([
-        prisma.product.count(),
-        prisma.inventoryItem.aggregate({ _sum: { stock: true } }),
-        prisma.product.groupBy({
-          by: ['categoryId'],
-          _count: { categoryId: true },
-        }),
-        prisma.inventoryItem.count({ where: { stock: { lt: 3 } } }),
-        prisma.inventoryItem.aggregate({
-          where: { stock: { lt: 3 } },
-          _sum: { stock: true },
-        }),
-      ]);
+    const [totalProducts, totalStock, categoryCount, productStockTotals] = await Promise.all([
+      prisma.product.count(),
+      prisma.inventoryItem.aggregate({ _sum: { stock: true } }),
+      prisma.product.groupBy({
+        by: ['categoryId'],
+        _count: { categoryId: true },
+      }),
+      getProductStockTotals(),
+    ]);
+
+    const lowStockProducts = productStockTotals.filter((product) => product.totalStock <= 5);
+    const lowStockCount = lowStockProducts.length;
+    const lowStockSumValue = lowStockProducts.reduce((sum, product) => sum + product.totalStock, 0);
 
     const totalStockValue = totalStock._sum.stock ?? 0;
-    const lowStockSumValue = lowStockAgg._sum.stock ?? 0;
 
     return {
       totalProducts,

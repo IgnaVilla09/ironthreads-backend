@@ -10,7 +10,7 @@ export const analyticsService = {
   },
 
   async getLowStock(threshold?: number) {
-    return analyticsRepository.findLowStock(threshold ?? 3);
+    return analyticsRepository.findLowStock(threshold ?? 5);
   },
 
   async getBestSellingSizes(limit?: number) {
