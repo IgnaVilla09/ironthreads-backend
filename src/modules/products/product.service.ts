@@ -30,6 +30,7 @@ export const productService = {
     const filters: ProductFilters = {
       categoryId: rawQuery.categoryId as string | undefined,
       search: rawQuery.search as string | undefined,
+      pointOfSaleId: rawQuery.pointOfSaleId as string | undefined,
     };
 
     logger.info('Listing products', { filters, pagination });
@@ -40,9 +41,13 @@ export const productService = {
     const stockMap = new Map<string, number>();
 
     if (variantIds.length > 0) {
+      const inventoryWhere: Record<string, unknown> = { variantId: { in: variantIds } };
+      if (filters.pointOfSaleId) {
+        inventoryWhere.pointOfSaleId = filters.pointOfSaleId;
+      }
       const inventoryAgg = await prisma.inventoryItem.groupBy({
         by: ['variantId'],
-        where: { variantId: { in: variantIds } },
+        where: inventoryWhere as never,
         _sum: { stock: true },
       });
       for (const item of inventoryAgg) {

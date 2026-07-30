@@ -14,6 +14,19 @@ function buildProductWhereClause(filters: ProductFilters): Prisma.ProductWhereIn
     where.name = { contains: filters.search, mode: 'insensitive' };
   }
 
+  if (filters.pointOfSaleId) {
+    where.variants = {
+      some: {
+        inventory: {
+          some: {
+            pointOfSaleId: filters.pointOfSaleId,
+            stock: { gt: 0 },
+          },
+        },
+      },
+    };
+  }
+
   return where;
 }
 
