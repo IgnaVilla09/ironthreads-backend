@@ -11,6 +11,7 @@ import tiendaNubeRoutes from './modules/tiendanube/tiendanube.routes';
 import catalogRoutes from './modules/catalog/catalog.routes';
 import { errorHandler } from './shared/middleware/error-handler';
 import { notFoundHandler } from './shared/middleware/not-found';
+import { prisma } from './config/database';
 
 const app = express();
 
@@ -36,15 +37,35 @@ app.use(
 
 app.use(express.json({ limit: '10kb' }));
 
-app.get('/api/v1/health', (_req, res) => {
-  res.json({
-    success: true,
-    data: {
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      environment: env.NODE_ENV,
-    },
-  });
+app.get('/api/v1/health', async (_req, res) => {
+  const timestamp = new Date().toISOString();
+
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({
+      success: true,
+      data: {
+        status: 'ok',
+        database: 'up',
+        timestamp,
+        environment: env.NODE_ENV,
+      },
+    });
+  } catch {
+    res.status(503).json({
+      success: false,
+      error: {
+        code: 'DATABASE_UNAVAILABLE',
+        message: 'Database connection failed',
+      },
+      data: {
+        status: 'degraded',
+        database: 'down',
+        timestamp,
+        environment: env.NODE_ENV,
+      },
+    });
+  }
 });
 
 app.use('/api/v1/auth', authRoutes);

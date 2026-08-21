@@ -14,9 +14,26 @@ function shouldLog(level: LogLevel): boolean {
   return LOG_LEVELS[level] >= LOG_LEVELS[currentLevel];
 }
 
+function serializeMeta(meta: unknown): string {
+  if (meta === undefined) return '';
+  if (meta instanceof Error) {
+    return ` ${JSON.stringify({
+      ...meta,
+      name: meta.name,
+      message: meta.message,
+      stack: meta.stack,
+    })}`;
+  }
+  return ` ${JSON.stringify(meta, (_, value) =>
+    value instanceof Error
+      ? { name: value.name, message: value.message, stack: value.stack }
+      : value,
+  )}`;
+}
+
 function formatMessage(level: LogLevel, message: string, meta?: unknown): string {
   const timestamp = new Date().toISOString();
-  const metaStr = meta ? ` ${JSON.stringify(meta)}` : '';
+  const metaStr = serializeMeta(meta);
   return `[${timestamp}] [${level.toUpperCase()}] ${message}${metaStr}`;
 }
 
