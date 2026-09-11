@@ -100,6 +100,26 @@ export const productRepository = {
     return prisma.product.delete({ where: { id } });
   },
 
+  async getProductRelatedCounts(productId: string) {
+    const variantIds = (
+      await prisma.productVariant.findMany({
+        where: { productId },
+        select: { id: true },
+      })
+    ).map((v) => v.id);
+
+    if (variantIds.length === 0) {
+      return { catalogOrderItems: 0, stockTransfers: 0, saleItems: 0 };
+    }
+
+    const [catalogOrderItems, stockTransfers, saleItems] = await Promise.all([
+      prisma.catalogOrderItem.count({ where: { variantId: { in: variantIds } } }),
+      prisma.stockTransfer.count({ where: { variantId: { in: variantIds } } }),
+      prisma.saleItem.count({ where: { variantId: { in: variantIds } } }),
+    ]);
+    return { catalogOrderItems, stockTransfers, saleItems };
+  },
+
   async findVariants(productId: string) {
     return prisma.productVariant.findMany({
       where: { productId },
@@ -155,5 +175,14 @@ export const productRepository = {
 
   async deleteVariant(id: string) {
     return prisma.productVariant.delete({ where: { id } });
+  },
+
+  async getVariantRelatedCounts(variantId: string) {
+    const [stockTransfers, saleItems, catalogOrderItems] = await Promise.all([
+      prisma.stockTransfer.count({ where: { variantId } }),
+      prisma.saleItem.count({ where: { variantId } }),
+      prisma.catalogOrderItem.count({ where: { variantId } }),
+    ]);
+    return { stockTransfers, saleItems, catalogOrderItems };
   },
 };

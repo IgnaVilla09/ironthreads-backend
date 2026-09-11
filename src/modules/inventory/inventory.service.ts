@@ -195,9 +195,9 @@ export const inventoryService = {
     for (const t of transfers) {
       const row = sheet.getRow(rowIndex);
       row.getCell(1).value = new Date(t.createdAt).toLocaleString('es-AR');
-      row.getCell(2).value = t.variant.product.name;
-      row.getCell(3).value = t.variant.sku;
-      row.getCell(4).value = `${t.variant.color.label} / ${t.variant.size.label}`;
+      row.getCell(2).value = t.variant?.product.name ?? '-';
+      row.getCell(3).value = t.variant?.sku ?? '-';
+      row.getCell(4).value = t.variant ? `${t.variant.color.label} / ${t.variant.size.label}` : '-';
       row.getCell(5).value = t.fromPointOfSale.label + (t.fromDeposito ? ` / ${t.fromDeposito.label}` : '');
       row.getCell(6).value = t.toPointOfSale.label + (t.toDeposito ? ` / ${t.toDeposito.label}` : '');
       row.getCell(7).value = t.quantity;

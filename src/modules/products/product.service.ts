@@ -161,6 +161,22 @@ export const productService = {
       throw AppError.notFound(`Producto con ID ${id} no encontrado`);
     }
 
+    const relatedCounts = await productRepository.getProductRelatedCounts(id);
+    const warnings: string[] = [];
+    if (relatedCounts.catalogOrderItems > 0) {
+      warnings.push(`${relatedCounts.catalogOrderItems} pedido(s) de catálogo`);
+    }
+    if (relatedCounts.stockTransfers > 0) {
+      warnings.push(`${relatedCounts.stockTransfers} transferencia(s) de stock`);
+    }
+    if (relatedCounts.saleItems > 0) {
+      warnings.push(`${relatedCounts.saleItems} venta(s) asociada(s)`);
+    }
+
+    if (warnings.length > 0) {
+      logger.warn('Product has related records that will be orphaned', { id, relatedCounts });
+    }
+
     logger.info('Deleting product', { id });
 
     await productRepository.deleteProduct(id);
@@ -275,6 +291,22 @@ export const productService = {
     const existing = await productRepository.findVariantById(id);
     if (!existing) {
       throw AppError.notFound(`Variante con ID ${id} no encontrada`);
+    }
+
+    const relatedCounts = await productRepository.getVariantRelatedCounts(id);
+    const blockers: string[] = [];
+    if (relatedCounts.stockTransfers > 0) {
+      blockers.push(`${relatedCounts.stockTransfers} transferencia(s) de stock`);
+    }
+    if (relatedCounts.saleItems > 0) {
+      blockers.push(`${relatedCounts.saleItems} venta(s) asociada(s)`);
+    }
+    if (relatedCounts.catalogOrderItems > 0) {
+      blockers.push(`${relatedCounts.catalogOrderItems} pedido(s) de catálogo`);
+    }
+
+    if (blockers.length > 0) {
+      logger.warn('Variant has related records that will be orphaned', { id, relatedCounts });
     }
 
     logger.info('Deleting variant', { id });

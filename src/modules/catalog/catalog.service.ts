@@ -269,6 +269,8 @@ export const catalogService = {
       }
 
       for (const item of order.items) {
+        if (!item.variantId) continue;
+
         const available = await tx.inventoryItem.aggregate({
           where: { variantId: item.variantId, pointOfSaleId: order.pointOfSaleId },
           _sum: { stock: true },
@@ -286,6 +288,7 @@ export const catalogService = {
       }
 
       for (const item of order.items) {
+        if (!item.variantId) continue;
         await consumePointOfSaleStock(tx, item.variantId, order.pointOfSaleId, item.quantity);
       }
 
