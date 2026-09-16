@@ -61,7 +61,7 @@ export async function sendOrderNotification(input: SendOrderNotificationInput) {
 
       ${notes ? `<p style="color: #666;"><strong>Notas:</strong> ${notes}</p>` : ''}
 
-      <a href="https://iron-stock.vercel.app/ventas/puntos-de-venta"
+      <a href="https://ironthreads-frontend.vercel.app/ventas/puntos-de-venta"
          style="display: inline-block; background: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 8px; margin-top: 16px;">
         Ver en el panel
       </a>
