@@ -26,7 +26,7 @@ export const catalogController = {
 
   async createPublicOrder(req: Request, res: Response, next: NextFunction) {
     try {
-      const order = await catalogService.createCatalogOrder(req.body);
+      const order = await catalogService.createCatalogOrderWithNotification(req.body);
       sendSuccess(res, order, 201);
     } catch (error) {
       next(error);

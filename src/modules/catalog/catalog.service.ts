@@ -6,6 +6,7 @@ import { logger } from '../../shared/utils/logger';
 import { catalogRepository } from './catalog.repository';
 import { CatalogOrderFilters, CreateCatalogOrderInput, PublicCatalogFilters } from './catalog.types';
 import { settingsRepository } from '../settings/settings.repository';
+import { sendOrderNotification } from '../../shared/email';
 
 const BLOCKED_PUBLIC_POINT_OF_SALE_ID = '2c79251e-df67-46eb-a313-15830f762750';
 
@@ -159,6 +160,33 @@ export const catalogService = {
     }
 
     return catalogRepository.createCatalogOrder({ ...input, pointOfSaleId }, itemsData);
+  },
+
+  async createCatalogOrderWithNotification(input: CreateCatalogOrderInput) {
+    const order = await this.createCatalogOrder(input);
+
+    const pointOfSale = await settingsRepository.findPointOfSaleByIdentifier(input.pointOfSaleId);
+
+    sendOrderNotification({
+      orderId: order.id,
+      pointOfSaleName: pointOfSale?.label ?? input.pointOfSaleId,
+      customerFirstName: order.customerFirstName,
+      customerLastName: order.customerLastName,
+      customerPhone: order.customerPhone,
+      items: order.items.map((item) => ({
+        productNameSnapshot: item.productNameSnapshot,
+        colorNameSnapshot: item.colorNameSnapshot,
+        sizeNameSnapshot: item.sizeNameSnapshot,
+        quantity: item.quantity,
+        unitPriceSnapshot: item.unitPriceSnapshot,
+      })),
+      total: order.total,
+      notes: order.notes,
+    }).catch((err) => {
+      logger.error('Failed to send order notification', { orderId: order.id, error: err.message });
+    });
+
+    return order;
   },
 
   async getPublicOrderById(id: string) {

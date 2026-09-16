@@ -10,6 +10,8 @@ const envSchema = z.object({
   ABANDONED_API_URL: z.string().url(),
   APP_CREDENTIALS_SECRET: z.string().min(32),
   SESSION_TTL_DAYS: z.coerce.number().int().positive().default(3),
+  RESEND_API_KEY: z.string().min(1),
+  NOTIFICATION_EMAIL: z.string().email(),
 });
 
 const parsed = envSchema.safeParse(process.env);
