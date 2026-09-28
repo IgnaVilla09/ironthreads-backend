@@ -164,15 +164,13 @@ export const analyticsRepository = {
   },
 
   async getGeneralStats() {
-    const [totalProducts, totalStock, categoryCount, productStockTotals] = await Promise.all([
-      prisma.product.count(),
-      prisma.inventoryItem.aggregate({ _sum: { stock: true } }),
-      prisma.product.groupBy({
-        by: ['categoryId'],
-        _count: { categoryId: true },
-      }),
-      getProductStockTotals(),
-    ]);
+    const totalProducts = await prisma.product.count();
+    const totalStock = await prisma.inventoryItem.aggregate({ _sum: { stock: true } });
+    const categoryCount = await prisma.product.groupBy({
+      by: ['categoryId'],
+      _count: { categoryId: true },
+    });
+    const productStockTotals = await getProductStockTotals();
 
     const lowStockProducts = productStockTotals.filter((product) => product.totalStock <= 5);
     const lowStockCount = lowStockProducts.length;

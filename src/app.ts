@@ -3,6 +3,7 @@ import cors from 'cors';
 import { env } from './config/env';
 import productRoutes from './modules/products/product.routes';
 import analyticsRoutes from './modules/analytics/analytics.routes';
+import chatRoutes from './modules/chat/chat.routes';
 import settingsRoutes from './modules/settings/settings.routes';
 import ventasRoutes from './modules/ventas/ventas.routes';
 import inventoryRoutes from './modules/inventory/inventory.routes';
@@ -76,6 +77,7 @@ app.use('/api/v1/ventas', ventasRoutes);
 app.use('/api/v1/inventory', inventoryRoutes);
 app.use('/api/v1/tiendanube', tiendaNubeRoutes);
 app.use('/api/v1/catalog', catalogRoutes);
+app.use('/api/v1/chat', chatRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

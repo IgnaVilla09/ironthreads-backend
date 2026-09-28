@@ -12,6 +12,7 @@ const envSchema = z.object({
   SESSION_TTL_DAYS: z.coerce.number().int().positive().default(3),
   RESEND_API_KEY: z.string().min(1),
   NOTIFICATION_EMAIL: z.string().email(),
+  OPENAI_API_KEY: z.string().min(1),
 });
 
 const parsed = envSchema.safeParse(process.env);
