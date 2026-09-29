@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { prisma } from '../../config/database';
+import { scoreCatalogProduct, searchTerms } from './product-search';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -41,7 +42,7 @@ const SEARCH_PRODUCT_TOOL: OpenAI.Chat.Completions.ChatCompletionTool = {
   function: {
     name: 'buscar_stock_producto',
     description:
-      'Buscar stock de productos en la base de datos. Analizá el mensaje y extraé los datos que el usuario busca. Es importante extraer KEYWORDS cortas y relevantes del producto (sin palabras vacías), porque la base de datos no tiene los nombres exactos que usa el cliente.',
+      'Buscar productos y stock en el catálogo por nombre, descripción, categoría y SKU. Extraé las palabras que el cliente usa para describir el producto, aunque sean plurales o diminutivos.',
     parameters: {
       type: 'object',
       properties: {
@@ -49,7 +50,7 @@ const SEARCH_PRODUCT_TOOL: OpenAI.Chat.Completions.ChatCompletionTool = {
           type: 'array',
           items: { type: 'string' },
           description:
-            'Términos clave del producto mencionado, entre 1 y 3, separados por palabra. Ej: "remera baseball negra" → ["baseball"]. "buzo del mundial" → ["mundial", "buzo"]. NO incluyas frases completas, ni palabras de relleno como "hay", "stock", "de", "la", "del", ni colores ni talles.',
+            'Palabras del producto solicitado, entre 1 y 3. Conservá el tipo de producto incluso si también informás la categoría: "gorritos" → ["gorritos"], "bolsos" → ["bolsos"], "remera baseball negra" → ["remera", "baseball"]. No incluyas colores, talles ni palabras de relleno.',
         },
         category: {
           type: 'string',
@@ -100,37 +101,58 @@ async function matchPointOfSale(intent: StockQueryIntent) {
   return { depositoIds, pointOfSaleIds };
 }
 
-function normalizeTerm(term: string): string {
-  return term.toLowerCase().trim();
+function catalogWhere(terms: string[]) {
+  return {
+    OR: terms.flatMap((term) => [
+      { name: { contains: term, mode: 'insensitive' as const } },
+      { description: { contains: term, mode: 'insensitive' as const } },
+      { category: { is: { name: { contains: term, mode: 'insensitive' as const } } } },
+      { category: { is: { label: { contains: term, mode: 'insensitive' as const } } } },
+      { variants: { some: { sku: { contains: term, mode: 'insensitive' as const } } } },
+    ]),
+  };
 }
 
-function scoreProduct(name: string, categoryLabel: string, keywords: string[]): number {
-  if (keywords.length === 0) return 1;
+async function findCatalogMatches(terms: string[], categoryTerms: string[]) {
+  if (terms.length === 0) return [];
 
-  const haystack = `${name} ${categoryLabel}`.toLowerCase();
-  const matched = keywords.filter((k) => haystack.includes(normalizeTerm(k)));
+  const select = {
+    id: true,
+    name: true,
+    description: true,
+    category: { select: { name: true, label: true } },
+    variants: { select: { sku: true } },
+  } as const;
+  const products = await prisma.product.findMany({
+    where: catalogWhere(terms),
+    select,
+    // Only lightweight fields at this stage; stock is loaded for the best matches below.
+    take: 300,
+  });
 
-  if (matched.length === 0) return 0;
+  const matches = new Map(products.map((product) => [product.id, product]));
+  // A broad word (e.g. "remera") must not crowd out a more specific one
+  // (e.g. "baseball") when the catalog has more than 300 matches.
+  if (products.length === 300 && terms.length > 1) {
+    for (const term of terms) {
+      const specific = await prisma.product.findMany({
+        where: catalogWhere([term]), select, take: 100,
+      });
+      for (const product of specific) matches.set(product.id, product);
+    }
+  }
 
-  return matched.length / keywords.length;
+  return [...matches.values()].map((product) => ({
+    id: product.id,
+    score: scoreCatalogProduct(product, terms, categoryTerms),
+  })).filter((product) => product.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 8).map((product) => product.id);
 }
 
-async function loadCandidatePool(intent: StockQueryIntent) {
-  const keywords = (intent.keywords ?? []).map(normalizeTerm).filter(Boolean);
-
-  const where: Record<string, unknown> = {};
-
-  if (keywords.length > 0) {
-    const keywordMatches = keywords.map((k) => ({ name: { contains: k, mode: 'insensitive' as const } }));
-    where.OR = keywordMatches;
-  }
-
-  if (intent.category) {
-    where.category = { name: intent.category.toUpperCase() };
-  }
-
+async function loadCandidatePool(ids: string[]) {
   return prisma.product.findMany({
-    where,
+    where: { id: { in: ids } },
     include: {
       category: { select: { id: true, name: true, label: true } },
       variants: {
@@ -147,17 +169,13 @@ async function loadCandidatePool(intent: StockQueryIntent) {
         },
       },
     },
-    orderBy: { name: 'asc' },
-    take: 40,
   });
 }
 
 function buildProductCandidates(
   pool: Awaited<ReturnType<typeof loadCandidatePool>>,
-  intent: StockQueryIntent,
   locationFilter: { depositoIds: string[]; pointOfSaleIds: string[] }
 ): ProductCandidate[] {
-  const keywords = (intent.keywords ?? []).map(normalizeTerm).filter(Boolean);
   const hasStockLocation =
     locationFilter.pointOfSaleIds.length > 0 || locationFilter.depositoIds.length > 0;
 
@@ -194,57 +212,26 @@ function buildProductCandidates(
         category: product.category.label,
         variants,
       };
-    })
-    .map((product) => ({
-      product,
-      score: scoreProduct(product.name, product.category, keywords),
-    }))
-    .filter((entry) => (keywords.length > 0 ? entry.score > 0 : true))
-    .sort((a, b) => b.score - a.score || a.product.name.localeCompare(b.product.name))
-    .slice(0, 8)
-    .map((entry) => entry.product);
+    });
 }
 
 async function searchStock(intent: StockQueryIntent): Promise<StockResult> {
-  const locationFilter = await matchPointOfSale(intent);
-
-  const pool = await loadCandidatePool(intent);
-
-  let candidates = buildProductCandidates(pool, intent, locationFilter);
-
-  // Fallback relajado: si no hubo resultados con las keywords,
-  // buscar con un subconjunto de keywords más cortas (tokens sueltos).
-  const keywords = (intent.keywords ?? []).map(normalizeTerm).filter(Boolean);
-  if (candidates.length === 0 && keywords.length > 1) {
-    for (const token of keywords) {
-      const relaxedPool = await prisma.product.findMany({
-        where: { name: { contains: token, mode: 'insensitive' } },
-        include: {
-          category: { select: { id: true, name: true, label: true } },
-          variants: {
-            include: {
-              color: { select: { id: true, name: true, label: true, hex: true } },
-              size: { select: { id: true, name: true, label: true } },
-              inventory: {
-                select: {
-                  stock: true,
-                  pointOfSale: { select: { id: true, name: true, label: true } },
-                  deposito: { select: { id: true, name: true, label: true } },
-                },
-              },
-            },
-          },
-        },
-        orderBy: { name: 'asc' },
-        take: 5,
-      });
-
-      if (relaxedPool.length > 0) {
-        candidates = buildProductCandidates(relaxedPool, intent, locationFilter);
-        break;
-      }
-    }
-  }
+  const terms = searchTerms(intent.keywords ?? []);
+  const categoryTerms = searchTerms(intent.category ? [intent.category] : []);
+  const ids = await findCatalogMatches(terms.length > 0 ? terms : categoryTerms, categoryTerms);
+  // Category is an optional hint, not a hard constraint inferred by the model.
+  const [locationFilter, pool] = await Promise.all([
+    matchPointOfSale(intent),
+    ids.length > 0 ? loadCandidatePool(ids) : Promise.resolve([]),
+  ]);
+  const byId = new Map(pool.map((product) => [product.id, product]));
+  const candidates = buildProductCandidates(
+    ids.flatMap((id) => {
+      const product = byId.get(id);
+      return product ? [product] : [];
+    }),
+    locationFilter
+  );
 
   const summary =
     candidates.length === 0
@@ -333,7 +320,7 @@ async function extractQueryIntent(message: string, pastTurns: ChatTurn[]): Promi
       {
         role: 'system',
         content:
-          'Analizá el mensaje del cliente y extraé qué producto busca en una tienda de indumentaria. Pensá cuáles son los términos realmente relevantes para buscar en un catálogo, no repitas la frase completa. Si el mensaje actual está incompleto (ej: "y en qué talles?", "en qué colores?"), usá el contexto de conversación previa para deducir de qué se sigue hablando. Respondé solo con la llamada a la herramienta.',
+          'Analizá el mensaje del cliente y extraé qué producto busca en una tienda de indumentaria. Conservá el nombre del tipo de producto aunque sea plural o diminutivo ("gorritos", "bolsos"); no lo reemplaces por una categoría inventada. Si el mensaje actual está incompleto (ej: "y en qué talles?", "en qué colores?"), usá el contexto de conversación previa para deducir de qué se sigue hablando. Respondé solo con la llamada a la herramienta.',
       },
     ];
 
@@ -350,7 +337,7 @@ async function extractQueryIntent(message: string, pastTurns: ChatTurn[]): Promi
       model: 'gpt-4o-mini',
       messages,
       tools: [SEARCH_PRODUCT_TOOL],
-      tool_choice: 'auto',
+      tool_choice: { type: 'function', function: { name: 'buscar_stock_producto' } },
       temperature: 0,
     });
 
