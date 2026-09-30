@@ -18,6 +18,7 @@ model AppUser {
   createdAt            DateTime     @default(now()) @map("created_at")
   updatedAt            DateTime     @updatedAt @map("updated_at")
   sessions             AppSession[]
+  chatConversations    ChatConversation[]
 
   @@index([username])
   @@map("app_users")
@@ -35,6 +36,34 @@ model AppSession {
   @@index([userId])
   @@index([expiresAt])
   @@map("app_sessions")
+}
+
+model ChatConversation {
+  id        String        @id @default(uuid()) @db.Uuid
+  userId    String        @db.Uuid @map("user_id")
+  clientId  String        @db.VarChar(128) @map("client_id")
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+  user      AppUser       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  ChatMessage[]
+
+  @@unique([userId, clientId])
+  @@map("chat_conversations")
+}
+
+model ChatMessage {
+  id             String           @id @default(uuid()) @db.Uuid
+  sequence       BigInt           @unique @default(autoincrement())
+  conversationId String           @db.Uuid @map("conversation_id")
+  turnId         String           @db.Uuid @map("turn_id")
+  conversation   ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String           @db.VarChar(16)
+  content        String
+  toolContext    String?          @map("tool_context")
+  createdAt      DateTime         @default(now()) @map("created_at")
+
+  @@index([conversationId, sequence])
+  @@map("chat_messages")
 }
 
 model Category {

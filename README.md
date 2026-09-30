@@ -96,3 +96,26 @@ El sistema envia notificaciones automaticas por email cuando se crea una nueva o
 - `src/config/env.ts` - Variables de entorno (RESEND_API_KEY, NOTIFICATION_EMAIL)
 - `src/modules/catalog/catalog.service.ts` - Metodo `createCatalogOrderWithNotification`
 - `src/modules/catalog/catalog.controller.ts` - Endpoint que invoca la notificacion
+
+## Agent Iron (chat)
+
+El chat autenticado ofrece busqueda de productos concretos y listado completo de
+productos con stock por categoria (sin detallar variantes), consultas de puntos de venta
+y depositos, alertas de stock bajo por variante y metricas de inventario/ventas.
+El historial se guarda en PostgreSQL por usuario e ID
+de conversacion del navegador; al limpiar una conversacion se eliminan sus mensajes.
+
+Antes de usar esta version en una base existente, aplicar la migracion aditiva
+`prisma/manual-migrations/20260930_add_chat_history.sql` **una sola vez** y generar
+el cliente Prisma con `npm run prisma:generate`. Si la base registra migraciones
+previas como pendientes pese a tener las tablas existentes, no ejecutar
+`prisma migrate deploy` indiscriminadamente: aplicar solo este SQL con el
+procedimiento habitual de migraciones manuales, por ejemplo:
+
+```bash
+npx prisma db execute --file prisma/manual-migrations/20260930_add_chat_history.sql --schema prisma/schema.prisma
+npm run prisma:generate
+```
+
+No contiene datos historicos de
+conversaciones anteriores, que se mantenian solo en memoria.
