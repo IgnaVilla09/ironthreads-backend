@@ -2,6 +2,23 @@
 
 API de `Iron Stock` y del catalogo publico `iron-catalog`.
 
+Versión actual: **2.1.0**. Ver [historial de versiones](CHANGELOG.md).
+
+## Instrucción para OpenCode: revisión de versiones
+
+Cuando analices este proyecto, revisá `CHANGELOG.md`, los commits posteriores al
+último hito documentado y los cambios pendientes. Determiná si una corrección
+importante, una mejora significativa o un cambio incompatible justifican aumentar
+la versión; no des por hecho que el número de `package.json` ya refleja el código.
+
+Si corresponde subirla, usá versionado semántico: **patch** para correcciones
+compatibles, **minor** para funcionalidades o mejoras compatibles y **major** para
+cambios incompatibles. Actualizá `package.json`, los campos `version` de la raíz
+y de `packages[""]` en `package-lock.json`, el `CHANGELOG.md` con los commits
+relacionados y la versión indicada en este README. Si el cambio forma parte de un
+hito conjunto con el frontend, coordiná la versión en ambos repositorios. Si todavía
+no corresponde subirla, explicá brevemente el motivo en el análisis.
+
 ## Stack
 
 - Express
