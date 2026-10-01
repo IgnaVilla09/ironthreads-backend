@@ -1,8 +1,9 @@
 export interface CreateSaleInput {
+  clientRequestId?: string;
   items: SaleItemInput[];
   paymentMethod: 'EFECTIVO' | 'MERCADO_PAGO' | 'OTRO';
   pointOfSaleId: string;
-  depositoId?: string;
+  depositoId?: string | null;
   observaciones?: string;
 }
 

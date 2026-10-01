@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export const createSaleSchema = z.object({
+  clientRequestId: z.string().uuid().optional(),
   items: z.array(z.object({
     variantId: z.string().uuid('Variante inválida'),
     quantity: z.coerce.number().int().min(1, 'La cantidad debe ser al menos 1'),

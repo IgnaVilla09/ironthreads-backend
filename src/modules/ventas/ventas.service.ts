@@ -7,6 +7,10 @@ import { logger } from '../../shared/utils/logger';
 
 export const ventasService = {
   async createSale(input: CreateSaleInput) {
+    if (input.clientRequestId) {
+      const existing = await prisma.sale.findUnique({ where: { clientRequestId: input.clientRequestId }, include: { items: true } });
+      if (existing) return existing;
+    }
     logger.info('Creating sale', {
       items: input.items.length,
       paymentMethod: input.paymentMethod,
@@ -67,7 +71,8 @@ export const ventasService = {
       input.pointOfSaleId,
       input.depositoId ?? null,
       itemsData,
-      input.observaciones
+      input.observaciones,
+      input.clientRequestId
     );
 
     logger.info('Sale created', { saleId: sale.id, total: sale.total });
@@ -271,5 +276,3 @@ export const ventasService = {
     return buffer as unknown as Buffer;
   },
 };
-
-

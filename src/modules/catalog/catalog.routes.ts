@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { validate } from '../../shared/middleware/validate';
 import { catalogController } from './catalog.controller';
 import { createCatalogOrderSchema } from './catalog.validators';
+import { requireAuthSession } from '../auth/auth.middleware';
 
 const router = Router();
 
@@ -10,6 +11,7 @@ router.get('/public/products/:id', catalogController.getPublicProductById);
 router.post('/public/orders', validate(createCatalogOrderSchema), catalogController.createPublicOrder);
 router.get('/public/orders/:id', catalogController.getPublicOrderById);
 
+router.use(requireAuthSession);
 router.get('/orders', catalogController.listOrders);
 router.get('/orders/:id', catalogController.getOrderById);
 router.post('/orders/:id/report-payment', catalogController.reportPayment);

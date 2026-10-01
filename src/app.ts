@@ -13,6 +13,7 @@ import catalogRoutes from './modules/catalog/catalog.routes';
 import { errorHandler } from './shared/middleware/error-handler';
 import { notFoundHandler } from './shared/middleware/not-found';
 import { prisma } from './config/database';
+import { requireAuthSession } from './modules/auth/auth.middleware';
 
 const app = express();
 
@@ -70,11 +71,11 @@ app.get('/api/v1/health', async (_req, res) => {
 });
 
 app.use('/api/v1/auth', authRoutes);
-app.use('/api/v1/products', productRoutes);
-app.use('/api/v1/analytics', analyticsRoutes);
-app.use('/api/v1/settings', settingsRoutes);
-app.use('/api/v1/ventas', ventasRoutes);
-app.use('/api/v1/inventory', inventoryRoutes);
+app.use('/api/v1/products', requireAuthSession, productRoutes);
+app.use('/api/v1/analytics', requireAuthSession, analyticsRoutes);
+app.use('/api/v1/settings', requireAuthSession, settingsRoutes);
+app.use('/api/v1/ventas', requireAuthSession, ventasRoutes);
+app.use('/api/v1/inventory', requireAuthSession, inventoryRoutes);
 app.use('/api/v1/tiendanube', tiendaNubeRoutes);
 app.use('/api/v1/catalog', catalogRoutes);
 app.use('/api/v1/chat', chatRoutes);

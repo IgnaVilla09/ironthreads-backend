@@ -1,5 +1,7 @@
 import { prisma } from '../../config/database';
 import { PaymentMethod } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import { AppError } from '../../shared/errors/app-error';
 
 export const ventasRepository = {
   async createSaleWithItems(
@@ -16,13 +18,28 @@ export const ventasRepository = {
       unitPrice: number;
       subtotal: number;
     }>,
-    observaciones?: string
+    observaciones?: string,
+    clientRequestId?: string
   ) {
     const total = items.reduce((sum, item) => sum + item.subtotal, 0);
 
-    return prisma.$transaction(async (tx) => {
+    const create = () => prisma.$transaction(async (tx) => {
+      // Recheck inside the transaction: the earlier UI/service verification is only advisory.
+      const required = new Map<string, number>();
+      for (const item of items) {
+        if (!item.inventoryItemId) throw AppError.badRequest('Ubicación de stock inválida');
+        required.set(item.inventoryItemId, (required.get(item.inventoryItemId) ?? 0) + item.quantity);
+      }
+      for (const [id, quantity] of required) {
+        const updated = await tx.inventoryItem.updateMany({
+          where: { id, stock: { gte: quantity } },
+          data: { stock: { decrement: quantity } },
+        });
+        if (updated.count !== 1) throw AppError.badRequest('Stock insuficiente al confirmar la venta');
+      }
       const sale = await tx.sale.create({
         data: {
+          clientRequestId,
           paymentMethod: paymentMethod as PaymentMethod,
           pointOfSaleId,
           depositoId,
@@ -58,17 +75,26 @@ export const ventasRepository = {
         },
       });
 
-      for (const item of items) {
-        if (item.inventoryItemId) {
-          await tx.inventoryItem.update({
-            where: { id: item.inventoryItemId },
-            data: { stock: { decrement: item.quantity } },
-          });
-        }
-      }
-
       return sale;
-    });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+
+    if (clientRequestId) {
+      const existing = await prisma.sale.findUnique({ where: { clientRequestId }, include: { items: true } });
+      if (existing) return existing;
+    }
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        return await create();
+      } catch (error) {
+        if (clientRequestId && error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+          const existing = await prisma.sale.findUnique({ where: { clientRequestId }, include: { items: true } });
+          if (existing) return existing;
+        }
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034' && attempt < 2) continue;
+        throw error;
+      }
+    }
+    throw AppError.badRequest('No se pudo registrar la venta');
   },
 
   async findInventoryItem(variantId: string, pointOfSaleId: string, depositoId?: string | null) {

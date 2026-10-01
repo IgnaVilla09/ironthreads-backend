@@ -19,6 +19,7 @@ Crear `iron/backend/.env` con las variables necesarias para:
 - `SESSION_TTL_DAYS`
 - `RESEND_API_KEY` (API key de Resend para envio de emails)
 - `NOTIFICATION_EMAIL` (email destino para notificaciones de ordenes)
+- `OPENAI_API_KEY` (Agent Iron)
 
 Para desarrollo local con admin y catalogo:
 
@@ -119,3 +120,27 @@ npm run prisma:generate
 
 No contiene datos historicos de
 conversaciones anteriores, que se mantenian solo en memoria.
+
+## Ventas pendientes y acceso offline
+
+Antes de iniciar la versión nueva del backend contra una base existente, aplicar
+**una sola vez por base** `prisma/manual-migrations/20260930_offline_sales.sql`.
+Comprobar primero el destino de `DATABASE_URL`. Desde `backend/`:
+
+```bash
+npx prisma db execute --file prisma/manual-migrations/20260930_offline_sales.sql --schema prisma/schema.prisma
+npm run prisma:generate
+```
+
+`Sale.clientRequestId` evita duplicar ventas cuando se reintenta sincronizar. La API
+administrativa requiere sesión Bearer; el panel la transmite por el proxy
+`/api/backend/*`. Las rutas del catálogo bajo `/api/v1/catalog/public/*` siguen
+siendo públicas.
+
+El endpoint autenticado `GET /api/v1/products/offline-snapshot` entrega en una
+respuesta productos, variantes y existencias por ubicación sin URLs de imágenes;
+el navegador guarda el respaldo. `POST /api/v1/ventas` admite un `clientRequestId`
+UUID opcional: al recibir el mismo ID otra vez devuelve la venta existente. El
+descuento de stock se comprueba y ejecuta dentro de la transacción para evitar
+ventas por encima del stock disponible. Si una venta pendiente no puede confirmarse,
+el frontend la conserva en el dispositivo para revisión.
