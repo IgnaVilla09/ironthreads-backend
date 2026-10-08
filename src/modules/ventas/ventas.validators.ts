@@ -4,8 +4,8 @@ export const createSaleSchema = z.object({
   clientRequestId: z.string().uuid().optional(),
   items: z.array(z.object({
     variantId: z.string().uuid('Variante inválida'),
-    quantity: z.coerce.number().int().min(1, 'La cantidad debe ser al menos 1'),
-    unitPrice: z.coerce.number().int().min(0).default(0),
+    quantity: z.coerce.number().int().min(1, 'La cantidad debe ser al menos 1').max(2147483647),
+    unitPrice: z.coerce.number().int().min(0).max(2147483647).default(0),
   })).min(1, 'Debe haber al menos un item'),
   paymentMethod: z.enum(['EFECTIVO', 'MERCADO_PAGO', 'OTRO']),
   pointOfSaleId: z.string().uuid('Punto de venta inválido'),

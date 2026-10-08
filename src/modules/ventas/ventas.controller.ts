@@ -1,8 +1,29 @@
 import { Request, Response, NextFunction } from 'express';
 import { ventasService } from './ventas.service';
 import { sendSuccess, sendSuccessWithMeta } from '../../shared/utils/response';
+import { prisma } from '../../config/database';
+import { editSale } from './sale-edit.service';
+import { AppError } from '../../shared/errors/app-error';
 
 export const ventasController = {
+  async edit(req: Request, res: Response, next: NextFunction) {
+    try {
+      if (!req.authSession) throw AppError.unauthorized('Sesión requerida');
+      sendSuccess(res, await editSale(prisma, req.params.id, req.body, req.authSession));
+    } catch (error) { next(error); }
+  },
+
+  async history(req: Request, res: Response, next: NextFunction) {
+    try {
+      await ventasService.getSaleById(req.params.id);
+      const edits = await prisma.saleEdit.findMany({
+        where: { saleId: req.params.id }, orderBy: { revision: 'desc' },
+        select: { id: true, revision: true, actorName: true, createdAt: true, reason: true,
+          before: true, after: true, movements: true, regularization: true, difference: true, paymentMethod: true },
+      });
+      sendSuccess(res, edits);
+    } catch (error) { next(error); }
+  },
   async create(req: Request, res: Response, next: NextFunction) {
     try {
       const sale = await ventasService.createSale(req.body);

@@ -241,6 +241,9 @@ model Sale {
   createdAt     DateTime      @default(now())
   items         SaleItem[]
   catalogOrder  CatalogOrder?
+  revision      Int          @default(0)
+  editedAt      DateTime?     @map("edited_at")
+  edits         SaleEdit[]
 
   @@index([createdAt])
   @@index([pointOfSaleId])
@@ -266,6 +269,29 @@ model SaleItem {
   @@index([variantId])
   @@index([inventoryItemId])
   @@map("sale_items")
+}
+
+model SaleEdit {
+  id                String        @id @default(uuid()) @db.Uuid
+  saleId            String        @db.Uuid @map("sale_id")
+  requestId         String        @unique @db.Uuid @map("request_id")
+  requestHash       String        @map("request_hash")
+  revision          Int
+  actorId           String        @db.Uuid @map("actor_id")
+  actorName         String        @map("actor_name")
+  reason            String
+  before            Json
+  after             Json
+  movements         Json
+  regularization    Int
+  difference        Int
+  paymentMethod     PaymentMethod? @map("payment_method")
+  createdAt         DateTime      @default(now()) @map("created_at")
+  sale              Sale          @relation(fields: [saleId], references: [id], onDelete: Restrict)
+
+  @@unique([saleId, revision])
+  @@index([createdAt])
+  @@map("sale_edits")
 }
 
 model CatalogOrder {

@@ -22,6 +22,7 @@ export const ventasRepository = {
     clientRequestId?: string
   ) {
     const total = items.reduce((sum, item) => sum + item.subtotal, 0);
+    if (!Number.isSafeInteger(total) || total < 0 || total > 2147483647) throw AppError.badRequest('El total excede el rango permitido');
 
     const create = () => prisma.$transaction(async (tx) => {
       // Recheck inside the transaction: the earlier UI/service verification is only advisory.
