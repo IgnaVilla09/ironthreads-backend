@@ -1,7 +1,33 @@
 import { Resend } from 'resend';
 import { env } from '../config/env';
+import { AppError } from './errors/app-error';
 
 const resend = new Resend(env.RESEND_API_KEY);
+const FROM_EMAIL = 'Iron Catalog <notificaciones@ironthreads.com.ar>';
+
+export async function sendDirectEmail(input: { to: string; subject: string; html: string }) {
+  const { data, error } = await resend.emails.send({
+    from: FROM_EMAIL,
+    to: input.to,
+    subject: input.subject,
+    html: input.html,
+  });
+
+  if (error) {
+    throw new AppError(502, 'EMAIL_SEND_FAILED', error.message || 'No se pudo enviar el email');
+  }
+
+  return { id: data?.id ?? null };
+}
+
+export async function sendBulkEmails(messages: Array<{ to: string; subject: string; html: string }>) {
+  for (let index = 0; index < messages.length; index += 100) {
+    const { error } = await resend.batch.send(messages.slice(index, index + 100).map((message) => ({ from: FROM_EMAIL, ...message })));
+    if (error) {
+      throw new AppError(502, 'EMAIL_SEND_FAILED', error.message || 'No se pudo enviar el lote de emails');
+    }
+  }
+}
 
 interface SendOrderNotificationInput {
   orderId: string;
@@ -69,7 +95,7 @@ export async function sendOrderNotification(input: SendOrderNotificationInput) {
   `;
 
   await resend.emails.send({
-    from: 'Iron Catalog <notificaciones@ironthreads.com.ar>',
+    from: FROM_EMAIL,
     to: env.NOTIFICATION_EMAIL,
     subject: `Nueva orden en ${pointOfSaleName} - $${total}`,
     html,

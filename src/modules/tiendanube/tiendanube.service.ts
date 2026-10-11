@@ -1,6 +1,16 @@
 import { env } from '../../config/env';
 import { AppError } from '../../shared/errors/app-error';
 
+type TiendaNubeCustomer = {
+  email: string | null;
+  name: string | null;
+  totalSpent: string | null;
+  acceptsMarketing: boolean;
+  unsubscribedAt: string | null;
+};
+
+type CustomersPage = { items: TiendaNubeCustomer[]; total: number; perPage: number };
+
 async function request<T>(endpoint: string, adminApiKey?: string, options: { method?: 'GET' | 'POST'; body?: unknown } = {}): Promise<T> {
   const response = await fetch(new URL(endpoint, env.ABANDONED_API_URL), {
     method: options.method ?? 'GET',
@@ -53,6 +63,25 @@ export const tiendaNubeService = {
 
   getCustomers(adminApiKey: string, query?: string) {
     return request(`/admin/customers${query ? `?${query}` : ''}`, adminApiKey);
+  },
+
+  async getMarketingCustomers(adminApiKey: string, minTotalSpent?: number) {
+    const customers: TiendaNubeCustomer[] = [];
+    let page = 1;
+    let total = 0;
+    const perPage = 100;
+
+    do {
+      const result = await request<CustomersPage>(`/admin/customers?page=${page}&perPage=${perPage}&acceptsMarketing=true`, adminApiKey);
+      customers.push(...result.items);
+      total = result.total;
+      page += 1;
+    } while (customers.length < total);
+
+    return customers.filter((customer) => {
+      const totalSpent = Number(customer.totalSpent ?? 0);
+      return Boolean(customer.email) && customer.acceptsMarketing && !customer.unsubscribedAt && (!minTotalSpent || totalSpent >= minTotalSpent);
+    });
   },
 
   syncCustomers(adminApiKey: string) {

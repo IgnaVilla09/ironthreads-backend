@@ -1,5 +1,10 @@
 import { NextFunction, Request, Response } from 'express';
 import { sendSuccess } from '../../shared/utils/response';
+import { sendDirectEmail } from '../../shared/email';
+import { sendBulkEmails } from '../../shared/email';
+import { AppError } from '../../shared/errors/app-error';
+import { emailSuppressionService } from './email-suppression.service';
+import { emailHistoryService } from './email-history.service';
 import { tiendaNubeService } from './tiendanube.service';
 
 export const tiendaNubeController = {
@@ -41,6 +46,52 @@ export const tiendaNubeController = {
 
   async syncCustomers(req: Request, res: Response, next: NextFunction) {
     try { sendSuccess(res, await tiendaNubeService.syncCustomers(req.authSession!.adminApiKey)); } catch (error) { next(error); }
+  },
+
+  async sendDirectEmail(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await sendDirectEmail(req.body);
+      await emailHistoryService.create({ type: 'single', recipient: req.body.to, recipientCount: 1, suppressedCount: 0, subject: req.body.subject, providerId: result.id, sentById: req.authSession!.userId });
+      sendSuccess(res, result, 201);
+    } catch (error) { next(error); }
+  },
+
+  async sendBulkEmail(req: Request, res: Response, next: NextFunction) {
+    try {
+      const customers = await tiendaNubeService.getMarketingCustomers(req.authSession!.adminApiKey, req.body.minTotalSpent);
+      const recipients = new Map<string, string | null>();
+      for (const customer of customers) {
+        const email = customer.email!.trim().toLowerCase();
+        if (!recipients.has(email)) recipients.set(email, customer.name);
+      }
+      const suppressed = await emailSuppressionService.findEmails([...recipients.keys()]);
+      const messages = [...recipients].filter(([email]) => !suppressed.has(email)).map(([to, name]) => ({
+        to,
+        subject: req.body.subject,
+        html: req.body.html.replaceAll('{{name}}', name || ''),
+      }));
+
+      if (!messages.length) throw new AppError(400, 'NO_RECIPIENTS', 'No hay destinatarios elegibles para este envío');
+      await sendBulkEmails(messages);
+      await emailHistoryService.create({ type: 'bulk', recipient: null, recipientCount: messages.length, suppressedCount: suppressed.size, subject: req.body.subject, providerId: null, sentById: req.authSession!.userId });
+      sendSuccess(res, { sent: messages.length, suppressed: suppressed.size, totalEligible: recipients.size }, 201);
+    } catch (error) { next(error); }
+  },
+
+  async emailSuppressions(_req: Request, res: Response, next: NextFunction) {
+    try { sendSuccess(res, await emailSuppressionService.list()); } catch (error) { next(error); }
+  },
+
+  async addEmailSuppression(req: Request, res: Response, next: NextFunction) {
+    try { sendSuccess(res, await emailSuppressionService.add(req.body.email, req.body.reason, req.authSession!.userId), 201); } catch (error) { next(error); }
+  },
+
+  async removeEmailSuppression(req: Request, res: Response, next: NextFunction) {
+    try { await emailSuppressionService.remove(req.params.id); res.status(204).end(); } catch (error) { next(error); }
+  },
+
+  async emailHistory(_req: Request, res: Response, next: NextFunction) {
+    try { sendSuccess(res, await emailHistoryService.list()); } catch (error) { next(error); }
   },
 
   async campaigns(req: Request, res: Response, next: NextFunction) {

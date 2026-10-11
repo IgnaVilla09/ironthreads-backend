@@ -19,9 +19,39 @@ model AppUser {
   updatedAt            DateTime     @updatedAt @map("updated_at")
   sessions             AppSession[]
   chatConversations    ChatConversation[]
+  emailSuppressions    EmailSuppression[]
+  emailSendLogs        EmailSendLog[]
 
   @@index([username])
   @@map("app_users")
+}
+
+model EmailSendLog {
+  id              String   @id @default(uuid()) @db.Uuid
+  type            String   @db.VarChar(16)
+  recipient       String?
+  recipientCount  Int      @map("recipient_count")
+  suppressedCount Int      @default(0) @map("suppressed_count")
+  subject         String
+  providerId      String?  @map("provider_id")
+  sentById        String   @db.Uuid @map("sent_by_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  sentBy          AppUser  @relation(fields: [sentById], references: [id], onDelete: Restrict)
+
+  @@index([createdAt])
+  @@map("email_send_logs")
+}
+
+model EmailSuppression {
+  id          String   @id @default(uuid()) @db.Uuid
+  email       String   @unique
+  reason      String?
+  createdById String   @db.Uuid @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  createdBy   AppUser  @relation(fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([email])
+  @@map("email_suppressions")
 }
 
 model AppSession {
