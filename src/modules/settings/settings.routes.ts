@@ -12,6 +12,8 @@ import {
   updatePointOfSaleSchema,
   createDepositoSchema,
   updateDepositoSchema,
+  createDiscountCodeSchema,
+  updateDiscountCodeSchema,
 } from './settings.validators';
 
 const router = Router();
@@ -50,5 +52,11 @@ router.get('/sizes/:id', settingsController.getSizeById);
 router.post('/sizes', validate(createSizeSchema), settingsController.createSize);
 router.put('/sizes/:id', validate(updateSizeSchema), settingsController.updateSize);
 router.delete('/sizes/:id', settingsController.deleteSize);
+
+// ── Discount codes ────────────────────────────────────
+router.get('/discount-codes', settingsController.listDiscountCodes);
+router.post('/discount-codes', validate(createDiscountCodeSchema), settingsController.createDiscountCode);
+router.put('/discount-codes/:id', validate(updateDiscountCodeSchema), settingsController.updateDiscountCode);
+router.delete('/discount-codes/:id', settingsController.deleteDiscountCode);
 
 export default router;

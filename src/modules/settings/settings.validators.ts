@@ -1,5 +1,24 @@
 import { z } from 'zod';
 
+const discountCodeFields = {
+  code: z.string().min(1, 'El código es obligatorio').max(80),
+  type: z.enum(['PERCENTAGE', 'FIXED']),
+  value: z.coerce.number().int().positive('El descuento debe ser mayor a cero'),
+  minOrderAmount: z.coerce.number().int().min(0).optional(),
+  maxUses: z.coerce.number().int().positive().nullable().optional(),
+  isActive: z.boolean().optional(),
+  validFrom: z.coerce.date().optional(),
+  validUntil: z.coerce.date().nullable().optional(),
+};
+
+export const createDiscountCodeSchema = z.object(discountCodeFields).superRefine((data, ctx) => {
+  if (data.validUntil && data.validFrom && data.validUntil < data.validFrom) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['validUntil'], message: 'La vigencia final debe ser posterior al inicio' });
+  }
+});
+
+export const updateDiscountCodeSchema = z.object(discountCodeFields).partial();
+
 export const createCategorySchema = z.object({
   name: z
     .string()

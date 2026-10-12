@@ -120,8 +120,8 @@ export const catalogRepository = {
     sizeNameSnapshot: string;
     unitPriceSnapshot: number;
     quantity: number;
-  }>) {
-    const total = items.reduce((sum, item) => sum + item.unitPriceSnapshot * item.quantity, 0);
+  }>, totalAmount?: number, discount?: { code: string; amount: number }) {
+    const total = totalAmount ?? items.reduce((sum, item) => sum + item.unitPriceSnapshot * item.quantity, 0);
 
     return prisma.catalogOrder.create({
       data: {
@@ -133,6 +133,8 @@ export const catalogRepository = {
         paymentMethod: PaymentMethod.MERCADO_PAGO,
         total,
         notes: input.notes?.trim() || null,
+        discountCode: discount?.code ?? null,
+        discountAmount: discount?.amount ?? null,
         items: {
           createMany: {
             data: items,

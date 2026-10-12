@@ -153,4 +153,29 @@ export const settingsRepository = {
   async deleteSize(id: string) {
     return prisma.size.delete({ where: { id } });
   },
+
+  // ── Discount codes ────────────────────────────────────
+  async findAllDiscountCodes() {
+    return prisma.discountCode.findMany({ orderBy: { code: 'asc' } });
+  },
+
+  async findDiscountCodeById(id: string) {
+    return prisma.discountCode.findUnique({ where: { id } });
+  },
+
+  async findDiscountCodeByCode(code: string) {
+    return prisma.discountCode.findUnique({ where: { code } });
+  },
+
+  async createDiscountCode(data: Prisma.DiscountCodeCreateInput) {
+    return prisma.discountCode.create({ data });
+  },
+
+  async updateDiscountCode(id: string, data: Prisma.DiscountCodeUpdateInput) {
+    return prisma.discountCode.update({ where: { id }, data });
+  },
+
+  async deleteDiscountCode(id: string) {
+    return prisma.discountCode.delete({ where: { id } });
+  },
 };

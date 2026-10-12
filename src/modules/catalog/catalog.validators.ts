@@ -13,5 +13,11 @@ export const createCatalogOrderSchema = z.object({
   customerPhone: z.string().trim().min(6, 'El teléfono es obligatorio').max(30),
   paymentMethod: z.literal('MERCADO_PAGO'),
   notes: z.string().trim().max(500).optional(),
+  couponCode: z.string().optional(),
   items: z.array(catalogOrderItemSchema).min(1, 'Debe haber al menos un item'),
+});
+
+export const validateDiscountCodeSchema = z.object({
+  couponCode: z.string().min(1, 'Ingresá un código de descuento'),
+  subtotal: z.coerce.number().int().min(0),
 });

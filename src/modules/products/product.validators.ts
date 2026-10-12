@@ -10,6 +10,7 @@ export const createProductSchema = z.object({
   categoryId: z.string().uuid('Categoría inválida'),
   imageUrl: z.string().url('La imagen debe ser una URL válida').optional(),
   price: z.coerce.number().int().min(0, 'El precio no puede ser negativo').optional(),
+  isOnSale: z.boolean().optional(),
 });
 
 export const updateProductSchema = z.object({
@@ -23,6 +24,7 @@ export const updateProductSchema = z.object({
   categoryId: z.string().uuid('Categoría inválida').optional(),
   imageUrl: z.string().url('La imagen debe ser una URL válida').nullable().optional(),
   price: z.coerce.number().int().min(0, 'El precio no puede ser negativo').nullable().optional(),
+  isOnSale: z.boolean().optional(),
 });
 
 export const inventoryAllocationSchema = z.object({

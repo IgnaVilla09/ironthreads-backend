@@ -11,8 +11,11 @@ import {
   UpdatePointOfSaleInput,
   CreateDepositoInput,
   UpdateDepositoInput,
+  CreateDiscountCodeInput,
+  UpdateDiscountCodeInput,
 } from './settings.types';
 import { logger } from '../../shared/utils/logger';
+import { Prisma } from '@prisma/client';
 
 function toCategoryResponse(cat: { id: string; name: string; label: string }) {
   return { id: cat.id, name: cat.name, label: cat.label };
@@ -283,5 +286,56 @@ export const settingsService = {
 
     logger.info('Deleting size', { id });
     await settingsRepository.deleteSize(id);
+  },
+
+  // ── Discount codes ────────────────────────────────────
+  async listDiscountCodes() {
+    return settingsRepository.findAllDiscountCodes();
+  },
+
+  async createDiscountCode(input: CreateDiscountCodeInput) {
+    const existing = await settingsRepository.findDiscountCodeByCode(input.code);
+    if (existing) {
+      throw AppError.conflict(`Ya existe el código de descuento "${input.code}"`);
+    }
+
+    if (input.type === 'PERCENTAGE' && input.value > 100) {
+      throw AppError.badRequest('Un descuento porcentual no puede superar el 100%');
+    }
+
+    return settingsRepository.createDiscountCode({
+      code: input.code,
+      type: input.type,
+      value: input.value,
+      minOrderAmount: input.minOrderAmount ?? 0,
+      maxUses: input.maxUses ?? null,
+      isActive: input.isActive ?? true,
+      validFrom: input.validFrom ?? new Date(),
+      ...(input.validUntil ? { validUntil: input.validUntil } : {}),
+    } as Prisma.DiscountCodeCreateInput);
+  },
+
+  async updateDiscountCode(id: string, input: UpdateDiscountCodeInput) {
+    const existing = await settingsRepository.findDiscountCodeById(id);
+    if (!existing) throw AppError.notFound(`Código de descuento con ID ${id} no encontrado`);
+
+    if (input.code !== undefined && input.code !== existing.code) {
+      const codeExists = await settingsRepository.findDiscountCodeByCode(input.code);
+      if (codeExists) throw AppError.conflict(`Ya existe el código de descuento "${input.code}"`);
+    }
+    if ((input.type ?? existing.type) === 'PERCENTAGE' && (input.value ?? existing.value) > 100) {
+      throw AppError.badRequest('Un descuento porcentual no puede superar el 100%');
+    }
+
+    return settingsRepository.updateDiscountCode(id, {
+      ...input,
+      validUntil: input.validUntil ?? undefined,
+    });
+  },
+
+  async deleteDiscountCode(id: string) {
+    const existing = await settingsRepository.findDiscountCodeById(id);
+    if (!existing) throw AppError.notFound(`Código de descuento con ID ${id} no encontrado`);
+    await settingsRepository.deleteDiscountCode(id);
   },
 };

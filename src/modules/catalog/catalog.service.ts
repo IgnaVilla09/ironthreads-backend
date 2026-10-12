@@ -5,6 +5,7 @@ import { getPaginationMeta, getPaginationParams } from '../../shared/utils/pagin
 import { logger } from '../../shared/utils/logger';
 import { catalogRepository } from './catalog.repository';
 import { CatalogOrderFilters, CreateCatalogOrderInput, PublicCatalogFilters } from './catalog.types';
+import { discountCodeRepository } from '../discount-code/discount-code.repository';
 import { settingsRepository } from '../settings/settings.repository';
 import { sendOrderNotification } from '../../shared/email';
 
@@ -85,6 +86,33 @@ async function consumePointOfSaleStock(
 }
 
 export const catalogService = {
+  async validateDiscountCode(couponCode: string, subtotal: number) {
+    const coupon = await discountCodeRepository.validateCode(couponCode);
+    const now = new Date();
+
+    if (!coupon || coupon.validFrom > now || (coupon.validUntil && coupon.validUntil < now)) {
+      throw AppError.badRequest('Código de descuento inválido o vencido');
+    }
+    if (coupon.maxUses != null && coupon.usesCount >= coupon.maxUses) {
+      throw AppError.badRequest('El código de descuento alcanzó su límite de usos');
+    }
+    if (subtotal < (coupon.minOrderAmount ?? 0)) {
+      throw AppError.badRequest('El pedido no alcanza el mínimo requerido para este código de descuento');
+    }
+
+    const discountAmount = coupon.type === 'PERCENTAGE'
+      ? Math.floor(subtotal * coupon.value / 100)
+      : coupon.type === 'FIXED'
+        ? coupon.value
+        : 0;
+
+    if (discountAmount === 0 && coupon.type !== 'FIXED' && coupon.type !== 'PERCENTAGE') {
+      throw AppError.badRequest('El código de descuento tiene una configuración inválida');
+    }
+
+    return { code: coupon.code, discountAmount: Math.min(discountAmount, subtotal) };
+  },
+
   async listPublicProducts(rawQuery: Record<string, unknown>) {
     const pagination = getPaginationParams(rawQuery as { page?: string; limit?: string });
     const filters: PublicCatalogFilters = {
@@ -135,7 +163,7 @@ export const catalogService = {
     for (const item of input.items) {
       const variant = await catalogRepository.findVariantWithProduct(item.variantId);
       if (!variant || variant.product.id !== item.productId) {
-        throw AppError.badRequest('Uno de los productos del pedido es inválido');
+        throw AppError.badRequest('Uno de los productos del pedido es inv├ílido');
       }
       if (variant.product.price == null) {
         throw AppError.badRequest(`El producto ${variant.product.name} no tiene precio configurado`);
@@ -159,7 +187,56 @@ export const catalogService = {
       });
     }
 
-    return catalogRepository.createCatalogOrder({ ...input, pointOfSaleId }, itemsData);
+    const subtotal = itemsData.reduce(
+      (sum, item) => sum + item.unitPriceSnapshot * item.quantity,
+      0
+    );
+    let discountCode: string | undefined;
+    let discountAmount = 0;
+    let discountCodeId: string | undefined;
+
+    if (input.couponCode) {
+      const coupon = await discountCodeRepository.validateCode(input.couponCode);
+      const now = new Date();
+
+      if (!coupon || coupon.validFrom > now || (coupon.validUntil && coupon.validUntil < now)) {
+        throw AppError.badRequest('Código de descuento inválido o vencido');
+      }
+      if (coupon.maxUses != null && coupon.usesCount >= coupon.maxUses) {
+        throw AppError.badRequest('El código de descuento alcanzó su límite de usos');
+      }
+      if (subtotal < (coupon.minOrderAmount ?? 0)) {
+        throw AppError.badRequest('El pedido no alcanza el mínimo requerido para este código de descuento');
+      }
+
+      if (coupon.type === 'PERCENTAGE') {
+        discountAmount = Math.floor(subtotal * coupon.value / 100);
+      } else if (coupon.type === 'FIXED') {
+        discountAmount = coupon.value;
+      } else {
+        throw AppError.badRequest('El código de descuento tiene una configuración inválida');
+      }
+
+      discountAmount = Math.min(discountAmount, subtotal);
+      discountCode = coupon.code;
+      discountCodeId = coupon.id;
+    }
+
+    const order = await catalogRepository.createCatalogOrder(
+      { ...input, pointOfSaleId },
+      itemsData,
+      subtotal - discountAmount,
+      discountCode ? { code: discountCode, amount: discountAmount } : undefined
+    );
+
+    if (discountCodeId) {
+      await prisma.discountCode.update({
+        where: { id: discountCodeId },
+        data: { usesCount: { increment: 1 } },
+      });
+    }
+
+    return order;
   },
 
   async createCatalogOrderWithNotification(input: CreateCatalogOrderInput) {

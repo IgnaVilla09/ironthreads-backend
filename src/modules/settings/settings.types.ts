@@ -81,3 +81,16 @@ export interface UpdateSizeInput {
   name?: string;
   label?: string;
 }
+
+export interface CreateDiscountCodeInput {
+  code: string;
+  type: 'PERCENTAGE' | 'FIXED';
+  value: number;
+  minOrderAmount?: number;
+  maxUses?: number | null;
+  isActive?: boolean;
+  validFrom?: Date;
+  validUntil?: Date | null;
+}
+
+export interface UpdateDiscountCodeInput extends Partial<CreateDiscountCodeInput> {}

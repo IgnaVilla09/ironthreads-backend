@@ -15,6 +15,7 @@ export interface ProductResponse {
   categoryId: string;
   imageUrl: string | null;
   price: number | null;
+  isOnSale: boolean;
   createdAt: Date;
   updatedAt: Date;
   variants: ProductVariant[];
@@ -26,6 +27,7 @@ export interface CreateProductInput {
   categoryId: string;
   imageUrl?: string;
   price?: number;
+  isOnSale?: boolean;
 }
 
 export interface UpdateProductInput {
@@ -34,6 +36,7 @@ export interface UpdateProductInput {
   categoryId?: string;
   imageUrl?: string | null;
   price?: number | null;
+  isOnSale?: boolean;
 }
 
 export interface InventoryAllocation {

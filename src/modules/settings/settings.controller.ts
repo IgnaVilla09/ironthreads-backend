@@ -249,4 +249,38 @@ export const settingsController = {
       next(error);
     }
   },
+
+  // ── Discount codes ────────────────────────────────────
+  async listDiscountCodes(_req: Request, res: Response, next: NextFunction) {
+    try {
+      sendSuccess(res, await settingsService.listDiscountCodes());
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async createDiscountCode(req: Request, res: Response, next: NextFunction) {
+    try {
+      sendSuccess(res, await settingsService.createDiscountCode(req.body), 201);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async updateDiscountCode(req: Request, res: Response, next: NextFunction) {
+    try {
+      sendSuccess(res, await settingsService.updateDiscountCode(req.params.id as string, req.body));
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async deleteDiscountCode(req: Request, res: Response, next: NextFunction) {
+    try {
+      await settingsService.deleteDiscountCode(req.params.id as string);
+      res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
+  },
 };

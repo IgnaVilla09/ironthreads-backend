@@ -17,6 +17,7 @@ export interface CreateCatalogOrderInput {
   customerPhone: string;
   paymentMethod: 'MERCADO_PAGO';
   notes?: string;
+  couponCode?: string;
   items: CreateCatalogOrderItemInput[];
 }
 

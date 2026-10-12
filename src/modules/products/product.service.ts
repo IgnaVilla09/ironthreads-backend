@@ -106,6 +106,7 @@ export const productService = {
       description: input.description ?? null,
       imageUrl: input.imageUrl ?? null,
       price: input.price ?? null,
+      isOnSale: input.isOnSale ?? false,
       category: { connect: { id: input.categoryId } },
     });
 
@@ -127,6 +128,7 @@ export const productService = {
     if (input.categoryId !== undefined) updateData.category = { connect: { id: input.categoryId } };
     if (input.imageUrl !== undefined) updateData.imageUrl = input.imageUrl;
     if (input.price !== undefined) updateData.price = input.price;
+    if (input.isOnSale !== undefined) updateData.isOnSale = input.isOnSale;
 
     logger.info('Updating product', { id });
 

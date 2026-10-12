@@ -33,6 +33,15 @@ export const catalogController = {
     }
   },
 
+  async validatePublicDiscountCode(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await catalogService.validateDiscountCode(req.body.couponCode, req.body.subtotal);
+      sendSuccess(res, result);
+    } catch (error) {
+      next(error);
+    }
+  },
+
   async getPublicOrderById(req: Request, res: Response, next: NextFunction) {
     try {
       const order = await catalogService.getPublicOrderById(req.params.id);

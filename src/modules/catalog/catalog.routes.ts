@@ -1,13 +1,14 @@
 import { Router } from 'express';
 import { validate } from '../../shared/middleware/validate';
 import { catalogController } from './catalog.controller';
-import { createCatalogOrderSchema } from './catalog.validators';
+import { createCatalogOrderSchema, validateDiscountCodeSchema } from './catalog.validators';
 import { requireAuthSession } from '../auth/auth.middleware';
 
 const router = Router();
 
 router.get('/public/products', catalogController.listPublicProducts);
 router.get('/public/products/:id', catalogController.getPublicProductById);
+router.post('/public/discount-codes/validate', validate(validateDiscountCodeSchema), catalogController.validatePublicDiscountCode);
 router.post('/public/orders', validate(createCatalogOrderSchema), catalogController.createPublicOrder);
 router.get('/public/orders/:id', catalogController.getPublicOrderById);
 

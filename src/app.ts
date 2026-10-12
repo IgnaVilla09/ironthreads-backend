@@ -17,7 +17,7 @@ import { requireAuthSession } from './modules/auth/auth.middleware';
 
 const app = express();
 
-const allowedOrigins = env.CORS_ORIGIN.split(',').map((o) => o.trim());
+const allowedOrigins = env.CORS_ORIGIN.split(/[,;]/).map((o) => o.trim()).filter(Boolean);
 console.log('[CORS] Allowed origins:', allowedOrigins);
 
 app.use(
