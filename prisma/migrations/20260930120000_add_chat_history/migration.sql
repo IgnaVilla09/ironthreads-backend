@@ -1,0 +1,2 @@
+-- The chat history tables were introduced directly in the existing production schema.
+-- This migration records that historical baseline; it intentionally has no DDL.
