@@ -243,6 +243,7 @@ model StockTransfer {
 enum PaymentMethod {
   EFECTIVO
   MERCADO_PAGO
+  MOBBEX
   OTRO
 
   @@map("payment_method")
@@ -267,6 +268,9 @@ model Sale {
   pointOfSale     PointOfSale?  @relation(fields: [pointOfSaleId], references: [id])
   deposito        Deposito?     @relation(fields: [depositoId], references: [id])
   paymentMethod   PaymentMethod
+  paymentStatus   String        @default("PAID") @map("payment_status")
+  customerName    String?       @map("customer_name")
+  customerEmail   String?       @map("customer_email")
   total           Int
   observaciones   String?
   createdAt       DateTime      @default(now())
@@ -275,11 +279,37 @@ model Sale {
   revision        Int          @default(0)
   editedAt        DateTime?     @map("edited_at")
   edits           SaleEdit[]
+  payments        SalePayment[]
 
   @@index([createdAt])
   @@index([pointOfSaleId])
   @@index([depositoId])
+  @@index([paymentStatus])
   @@map("sales")
+}
+
+model SalePayment {
+  id                String   @id @default(uuid()) @db.Uuid
+  saleId            String   @db.Uuid @map("sale_id")
+  provider          String
+  status            String   @default("CREATED")
+  reference         String   @unique
+  externalPaymentId String?  @unique @map("external_payment_id")
+  qrPayload         Json?    @map("qr_payload")
+  providerPayload   Json?    @map("provider_payload")
+  expiresAt         DateTime? @map("expires_at")
+  paidAt            DateTime? @map("paid_at")
+  receiptStatus     String   @default("PENDING") @map("receipt_status")
+  receiptProviderId String?  @map("receipt_provider_id")
+  receiptSentAt     DateTime? @map("receipt_sent_at")
+  receiptError      String?  @map("receipt_error")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  sale              Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  @@index([saleId])
+  @@index([status])
+  @@map("sale_payments")
 }
 
 model SaleItem {

@@ -61,6 +61,10 @@ export const tiendaNubeService = {
     return request('/admin/message-logs', adminApiKey);
   },
 
+  createMobbexQr(adminApiKey: string, body: { total: number; reference: string; email: string }) {
+    return request<unknown>('/admin/mobbex/qr', adminApiKey, { method: 'POST', body });
+  },
+
   getCustomers(adminApiKey: string, query?: string) {
     return request(`/admin/customers${query ? `?${query}` : ''}`, adminApiKey);
   },

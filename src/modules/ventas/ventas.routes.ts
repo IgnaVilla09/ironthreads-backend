@@ -9,6 +9,8 @@ const router = Router();
 router.get('/', ventasController.list);
 router.get('/export', ventasController.exportExcel);
 router.post('/verify-stock', validate(verifyStockSchema), ventasController.verifyStock);
+router.post('/:id/mobbex/qr', ventasController.createMobbexQr);
+router.post('/:id/receipt/resend', ventasController.resendReceipt);
 router.get('/:id', ventasController.getById);
 router.get('/:id/edits', ventasController.history);
 router.post('/:id/edits', validate(editSaleSchema), ventasController.edit);

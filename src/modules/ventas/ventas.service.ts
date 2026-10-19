@@ -72,7 +72,8 @@ export const ventasService = {
       input.depositoId ?? null,
       itemsData,
       input.observaciones,
-      input.clientRequestId
+      input.clientRequestId,
+      { name: input.customerName, email: input.customerEmail }
     );
 
     logger.info('Sale created', { saleId: sale.id, total: sale.total });

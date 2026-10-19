@@ -1,7 +1,9 @@
 export interface CreateSaleInput {
   clientRequestId?: string;
   items: SaleItemInput[];
-  paymentMethod: 'EFECTIVO' | 'MERCADO_PAGO' | 'OTRO';
+  paymentMethod: 'EFECTIVO' | 'MERCADO_PAGO' | 'MOBBEX' | 'OTRO';
+  customerName?: string;
+  customerEmail?: string;
   pointOfSaleId: string;
   depositoId?: string | null;
   observaciones?: string;

@@ -14,6 +14,7 @@ import { errorHandler } from './shared/middleware/error-handler';
 import { notFoundHandler } from './shared/middleware/not-found';
 import { prisma } from './config/database';
 import { requireAuthSession } from './modules/auth/auth.middleware';
+import mobbexRoutes from './modules/ventas/mobbex.routes';
 
 const app = express();
 
@@ -37,7 +38,7 @@ app.use(
   })
 );
 
-app.use(express.json({ limit: '10kb' }));
+app.use(express.json({ limit: '10kb', verify: (req, _res, buffer) => { (req as express.Request & { rawBody?: string }).rawBody = buffer.toString('utf8'); } }));
 
 app.get('/api/v1/health', async (_req, res) => {
   const timestamp = new Date().toISOString();
@@ -75,6 +76,7 @@ app.use('/api/v1/products', requireAuthSession, productRoutes);
 app.use('/api/v1/analytics', requireAuthSession, analyticsRoutes);
 app.use('/api/v1/settings', requireAuthSession, settingsRoutes);
 app.use('/api/v1/ventas', requireAuthSession, ventasRoutes);
+app.use('/api/v1/mobbex', mobbexRoutes);
 app.use('/api/v1/inventory', requireAuthSession, inventoryRoutes);
 app.use('/api/v1/tiendanube', tiendaNubeRoutes);
 app.use('/api/v1/catalog', catalogRoutes);

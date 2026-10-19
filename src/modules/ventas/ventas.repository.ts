@@ -19,7 +19,8 @@ export const ventasRepository = {
       subtotal: number;
     }>,
     observaciones?: string,
-    clientRequestId?: string
+    clientRequestId?: string,
+    customer?: { name?: string; email?: string }
   ) {
     const total = items.reduce((sum, item) => sum + item.subtotal, 0);
     if (!Number.isSafeInteger(total) || total < 0 || total > 2147483647) throw AppError.badRequest('El total excede el rango permitido');
@@ -46,6 +47,9 @@ export const ventasRepository = {
           depositoId,
           total,
           observaciones,
+          customerName: customer?.name,
+          customerEmail: customer?.email?.toLowerCase(),
+          paymentStatus: paymentMethod === 'MOBBEX' ? 'PENDING' : 'PAID',
           items: {
             createMany: {
               data: items.map((item) => ({

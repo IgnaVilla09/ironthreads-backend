@@ -4,8 +4,25 @@ import { sendSuccess, sendSuccessWithMeta } from '../../shared/utils/response';
 import { prisma } from '../../config/database';
 import { editSale } from './sale-edit.service';
 import { AppError } from '../../shared/errors/app-error';
+import { mobbexSalesService } from './mobbex.service';
 
 export const ventasController = {
+  async createMobbexQr(req: Request, res: Response, next: NextFunction) {
+    try {
+      if (!req.authSession) throw AppError.unauthorized('Sesión requerida');
+      sendSuccess(res, await mobbexSalesService.createQr(req.params.id, req.authSession.adminApiKey), 201);
+    } catch (error) { next(error); }
+  },
+
+  async resendReceipt(req: Request, res: Response, next: NextFunction) {
+    try {
+      const payment = await prisma.salePayment.findFirst({ where: { saleId: req.params.id, status: 'APPROVED' }, orderBy: { paidAt: 'desc' } });
+      if (!payment) throw AppError.badRequest('La venta todavía no tiene un pago Mobbex aprobado');
+      await prisma.salePayment.update({ where: { id: payment.id }, data: { receiptStatus: 'PENDING' } });
+      await mobbexSalesService.sendReceipt(payment.id);
+      sendSuccess(res, { ok: true });
+    } catch (error) { next(error); }
+  },
   async edit(req: Request, res: Response, next: NextFunction) {
     try {
       if (!req.authSession) throw AppError.unauthorized('Sesión requerida');

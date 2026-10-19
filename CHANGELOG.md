@@ -1,5 +1,15 @@
 # Historial de versiones — Iron Stock (backend)
 
+## 2.5.0 — 2026-10-19 — Pagos QR con Mobbex
+
+- Medio de pago opcional `MOBBEX` en ventas nuevas, con la venta en estado `PENDING` mientras se espera la confirmación.
+- Generación y reintento de QR sin duplicar ventas ni descuentos de stock.
+- Reserva de stock al crear la venta y devolución única ante rechazo, cancelación o expiración.
+- Webhook firmado con HMAC SHA-256, validación de timestamp, ventana anti-replay de cinco minutos y comparación en tiempo constante.
+- Comprobante no fiscal mediante Resend al aprobarse el pago, con idempotencia de eventos para no duplicar recibos ni movimientos de stock.
+
+Cambios posteriores a `8785752`. Requiere aplicar la migración `prisma/migrations/20261018000000_add_mobbex_payments/migration.sql` antes de habilitar el medio de pago.
+
 ## 2.4.0 — 2026-10-12 — Ofertas, descuentos y catálogo público
 
 - Campo `isOnSale` para marcar productos que deben mostrar una oferta en el catálogo.

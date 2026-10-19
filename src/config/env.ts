@@ -13,6 +13,7 @@ const envSchema = z.object({
   RESEND_API_KEY: z.string().min(1),
   NOTIFICATION_EMAIL: z.string().email(),
   OPENAI_API_KEY: z.string().min(1),
+  MOBBEX_WEBHOOK_SECRET: z.string().min(32).optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
